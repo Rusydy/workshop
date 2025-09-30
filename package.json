@@ -1,0 +1,29 @@
+{
+  "name": "pustaka-ilmu-bookstore",
+  "version": "1.0.0",
+  "description": "A modern Indonesian bookstore website with Playwright testing",
+  "main": "index.html",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report",
+    "test:quick": "node test-quick.js",
+    "serve": "http-server -p 8080 -o",
+    "dev": "http-server -p 8080",
+    "install:browsers": "playwright install"
+  },
+  "keywords": [
+    "bookstore",
+    "playwright",
+    "testing",
+    "e2e"
+  ],
+  "author": "Pustaka Ilmu Team",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "http-server": "^14.1.1"
+  }
+}
