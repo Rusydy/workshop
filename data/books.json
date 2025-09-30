@@ -1,0 +1,110 @@
+[
+  {
+    "id": 1,
+    "title": "Judul Buku Fiksi",
+    "author": "Penulis A",
+    "price": "Rp 99.000",
+    "image": "https://placehold.co/270x380/1a7f72/FFFFFF?text=Fiksi",
+    "alt": "Cover Buku Fiksi",
+    "trending": true
+  },
+  {
+    "id": 2,
+    "title": "Buku Pengembangan Diri",
+    "author": "Penulis B",
+    "price": "Rp 125.000",
+    "image": "https://placehold.co/270x380/f0ad4e/FFFFFF?text=Bisnis",
+    "alt": "Cover Buku Non-Fiksi",
+    "trending": true
+  },
+  {
+    "id": 3,
+    "title": "Cerita Anak Edukatif",
+    "author": "Penulis C",
+    "price": "Rp 75.000",
+    "image": "https://placehold.co/270x380/5cb85c/FFFFFF?text=Anak",
+    "alt": "Cover Buku Anak",
+    "trending": true
+  },
+  {
+    "id": 4,
+    "title": "Sejarah Nusantara",
+    "author": "Penulis D",
+    "price": "Rp 150.000",
+    "image": "https://placehold.co/270x380/d9534f/FFFFFF?text=Sejarah",
+    "alt": "Cover Buku Sejarah",
+    "trending": true
+  },
+  {
+    "id": 5,
+    "title": "Novel Senja",
+    "author": "Penulis E",
+    "price": "Rp 88.000",
+    "image": "https://placehold.co/270x380/6f42c1/FFFFFF?text=Novel",
+    "alt": "Cover Novel Senja",
+    "trending": false
+  },
+  {
+    "id": 6,
+    "title": "Galaksi Andromeda",
+    "author": "Penulis F",
+    "price": "Rp 110.000",
+    "image": "https://placehold.co/270x380/fd7e14/FFFFFF?text=Sci-Fi",
+    "alt": "Cover Galaksi Andromeda",
+    "trending": false
+  },
+  {
+    "id": 7,
+    "title": "Jejak Sang Pemimpin",
+    "author": "Penulis G",
+    "price": "Rp 135.000",
+    "image": "https://placehold.co/270x380/20c997/FFFFFF?text=Biografi",
+    "alt": "Cover Jejak Sang Pemimpin",
+    "trending": false
+  },
+  {
+    "id": 8,
+    "title": "Misteri Pulau Hilang",
+    "author": "Penulis H",
+    "price": "Rp 95.000",
+    "image": "https://placehold.co/270x380/343a40/FFFFFF?text=Misteri",
+    "alt": "Cover Misteri Pulau Hilang",
+    "trending": false
+  },
+  {
+    "id": 9,
+    "title": "Kerajaan Naga",
+    "author": "Penulis I",
+    "price": "Rp 140.000",
+    "image": "https://placehold.co/270x380/007bff/FFFFFF?text=Fantasi",
+    "alt": "Cover Kerajaan Naga",
+    "trending": false
+  },
+  {
+    "id": 10,
+    "title": "Rumah di Ujung Jalan",
+    "author": "Penulis J",
+    "price": "Rp 89.000",
+    "image": "https://placehold.co/270x380/dc3545/FFFFFF?text=Horor",
+    "alt": "Cover Rumah di Ujung Jalan",
+    "trending": false
+  },
+  {
+    "id": 11,
+    "title": "Kumpulan Kisah Lucu",
+    "author": "Penulis K",
+    "price": "Rp 70.000",
+    "image": "https://placehold.co/270x380/ffc107/000000?text=Komedi",
+    "alt": "Cover Kumpulan Kisah Lucu",
+    "trending": false
+  },
+  {
+    "id": 12,
+    "title": "Alam Semesta",
+    "author": "Penulis L",
+    "price": "Rp 160.000",
+    "image": "https://placehold.co/270x380/17a2b8/FFFFFF?text=Sains",
+    "alt": "Cover Alam Semesta",
+    "trending": false
+  }
+]
