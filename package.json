@@ -9,7 +9,8 @@
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
-    "test:quick": "node test-quick.js",
+    "test:all-pages": "node test-all-pages.js",
+    "test:all-pages:full": "node test-all-pages.js --full",
     "serve": "http-server -p 8080 -o",
     "dev": "http-server -p 8080",
     "install:browsers": "playwright install"
