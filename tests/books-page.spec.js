@@ -1,4 +1,10 @@
 const { test, expect } = require("@playwright/test");
+const {
+  isMobileBrowser,
+  waitForPageLoad,
+  clickNavLink,
+  testCartFunctionality,
+} = require("./mobile-helpers");
 
 test.describe("Books Page Tests - PHP/Bootstrap Version", () => {
   test.beforeEach(async ({ page }) => {
@@ -228,15 +234,23 @@ test.describe("Books Page Tests - PHP/Bootstrap Version", () => {
     await expect(page.locator(".hero-section")).toBeVisible();
   });
 
-  test("should navigate back to homepage correctly", async ({ page }) => {
-    // Click on brand/logo
-    const brandLink = page.locator('.navbar-brand[href="index.php"]');
-    await brandLink.click();
+  test("should navigate back to homepage correctly", async ({
+    page,
+    browserName,
+  }) => {
+    const loadResult1 = await waitForPageLoad(page, browserName);
+    await expect(loadResult1.navbar).toBeVisible();
+    await expect(loadResult1.body).toBeVisible();
+
+    // Click on brand/logo with mobile support
+    await clickNavLink(page, '.navbar-brand[href="index.php"]', browserName);
 
     await expect(page).toHaveURL(/.*index\.php$|.*\/$/);
 
-    // Wait for page to load
-    await page.waitForTimeout(1000);
+    // Wait for page to load with mobile considerations
+    const loadResult2 = await waitForPageLoad(page, browserName);
+    await expect(loadResult2.navbar).toBeVisible();
+    await expect(loadResult2.body).toBeVisible();
 
     const heroTitle = page.locator(".hero-section h1");
     if ((await heroTitle.count()) > 0) {
@@ -247,10 +261,12 @@ test.describe("Books Page Tests - PHP/Bootstrap Version", () => {
 
     // Go back to books
     await page.goto("/books.php");
+    const loadResult3 = await waitForPageLoad(page, browserName);
+    await expect(loadResult3.navbar).toBeVisible();
+    await expect(loadResult3.body).toBeVisible();
 
-    // Click on Beranda nav link
-    const homeNavLink = page.locator('nav .nav-link[href="index.php"]');
-    await homeNavLink.click();
+    // Click on Beranda nav link with mobile support
+    await clickNavLink(page, 'nav .nav-link[href="index.php"]', browserName);
 
     await expect(page).toHaveURL(/.*index\.php$|.*\/$/);
   });
@@ -351,7 +367,14 @@ test.describe("Books Page Tests - PHP/Bootstrap Version", () => {
     }
   });
 
-  test("should handle database errors gracefully", async ({ page }) => {
+  test("should handle database errors gracefully", async ({
+    page,
+    browserName,
+  }) => {
+    const loadResult = await waitForPageLoad(page, browserName);
+    await expect(loadResult.navbar).toBeVisible();
+    await expect(loadResult.body).toBeVisible();
+
     // Even if there are database connection issues, page should load
     await expect(page.locator("body")).toBeVisible();
     await expect(page.locator("nav.navbar")).toBeVisible();
@@ -366,8 +389,8 @@ test.describe("Books Page Tests - PHP/Bootstrap Version", () => {
     const linkCount = await navLinks.count();
     expect(linkCount).toBeGreaterThan(0);
 
-    // Can navigate to other pages
-    await page.click('nav a[href="about.php"]');
+    // Can navigate to other pages with mobile support
+    await clickNavLink(page, 'nav a[href="about.php"]', browserName);
     await expect(page).toHaveURL(/.*about\.php/);
   });
 });

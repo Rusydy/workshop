@@ -20,9 +20,12 @@
     
     <!-- Custom JavaScript -->
     <script>
+        // Detect if device supports touch
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        
         // Cart functionality
         function addToCart(bookId) {
-            fetch('add_to_cart.php', {
+            return fetch('add_to_cart.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -47,34 +50,86 @@
                     
                     // Show notification
                     showNotification();
+                    return data;
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                throw error;
             });
         }
         
         function showNotification() {
             const notification = document.getElementById('notification');
-            notification.classList.remove('d-none');
-            
-            setTimeout(() => {
-                notification.classList.add('d-none');
-            }, 2000);
+            if (notification) {
+                notification.classList.remove('d-none');
+                
+                setTimeout(() => {
+                    notification.classList.add('d-none');
+                }, 3000); // Longer timeout for mobile
+            }
         }
         
-        // Smooth scrolling for anchor links
+        // Enhanced mobile support for book cards
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add touch support for book cards
+            const bookCards = document.querySelectorAll('.book-card');
+            
+            bookCards.forEach(card => {
+                if (isTouchDevice) {
+                    // Add touch events for mobile
+                    card.addEventListener('touchstart', function() {
+                        this.classList.add('touch-active');
+                    });
+                    
+                    card.addEventListener('touchend', function() {
+                        setTimeout(() => {
+                            this.classList.remove('touch-active');
+                        }, 300);
+                    });
+                }
+                
+                // Ensure buttons are accessible on mobile
+                const buyButton = card.querySelector('.btn-buy');
+                if (buyButton && isTouchDevice) {
+                    buyButton.style.opacity = '1';
+                    buyButton.style.transform = 'translateX(-50%) translateY(0)';
+                }
+            });
+            
+            // Improve mobile navigation
+            const navbarToggler = document.querySelector('.navbar-toggler');
+            const navbarCollapse = document.querySelector('#navbarNav');
+            
+            if (navbarToggler && navbarCollapse && isTouchDevice) {
+                navbarToggler.addEventListener('click', function() {
+                    // Add small delay to ensure Bootstrap has time to process
+                    setTimeout(() => {
+                        const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                        if (isExpanded) {
+                            navbarCollapse.classList.add('show');
+                        }
+                    }, 100);
+                });
+            }
+        });
+        
+        // Smooth scrolling for anchor links with mobile optimization
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) {
                     target.scrollIntoView({
-                        behavior: 'smooth'
+                        behavior: 'smooth',
+                        block: 'start'
                     });
                 }
             });
         });
+        
+        // Make addToCart globally available
+        window.addToCart = addToCart;
     </script>
 </body>
 </html>

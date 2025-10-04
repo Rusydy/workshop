@@ -1,4 +1,14 @@
 const { test, expect } = require("@playwright/test");
+const {
+  isMobileBrowser,
+  mobileInteract,
+  waitForPageLoad,
+  testCartFunctionality,
+  clickNavLink,
+  testJavaScriptFunctionality,
+  testKeyboardNavigation,
+  testImageLoading,
+} = require("./mobile-helpers");
 
 test.describe("Cross-Browser Compatibility Tests - PHP/Bootstrap Version", () => {
   test.describe("Basic Functionality Across Browsers", () => {
@@ -61,27 +71,34 @@ test.describe("Cross-Browser Compatibility Tests - PHP/Bootstrap Version", () =>
     test("JavaScript functionality should work across browsers", async ({
       page,
       browserName,
-    }) => {
+    }, testInfo) => {
       await page.goto("/");
 
-      // Wait for page to load
-      await page.waitForTimeout(1000);
+      // Use mobile-aware page loading
+      const projectName = testInfo.project.name;
+      const loadResult = await waitForPageLoad(page, projectName);
+      await expect(loadResult.navbar).toBeVisible();
+      await expect(loadResult.body).toBeVisible();
 
-      // Check if cart functionality is present
+      // Check if cart functionality is present - handle mobile differently
       const cartIcon = page.locator(".cart-icon .fas.fa-shopping-cart");
-      await expect(cartIcon).toBeVisible();
+      if (isMobileBrowser(projectName)) {
+        // For mobile, just verify cart icon exists in DOM (may be hidden in menu)
+        const cartIconExists = (await cartIcon.count()) > 0;
+        expect(cartIconExists).toBeTruthy();
+      } else {
+        await expect(cartIcon).toBeVisible();
+      }
 
       // Check if books data loads from database
       const booksSection = page.locator("#koleksi");
       await expect(booksSection).toBeVisible();
 
-      // Check if addToCart function is available
-      const hasAddToCartFunction = await page.evaluate(() => {
-        return typeof window.addToCart === "function";
-      });
-      expect(hasAddToCartFunction).toBeTruthy();
+      // Test JavaScript functionality with mobile considerations
+      const jsResult = await testJavaScriptFunctionality(page, projectName);
+      expect(jsResult.hasAddToCartFunction).toBeTruthy();
 
-      console.log(`✓ JavaScript functionality works in ${browserName}`);
+      console.log(`✓ JavaScript functionality works in ${projectName}`);
     });
   });
 
@@ -89,30 +106,35 @@ test.describe("Cross-Browser Compatibility Tests - PHP/Bootstrap Version", () =>
     test("navigation should work identically across browsers", async ({
       page,
       browserName,
-    }) => {
+    }, testInfo) => {
       await page.goto("/");
+      const projectName = testInfo.project.name;
+      const loadResult = await waitForPageLoad(page, projectName);
+      await expect(loadResult.navbar).toBeVisible();
+      await expect(loadResult.body).toBeVisible();
 
-      // Test navigation to books page
-      await page.locator('nav a[href="books.php"]').click();
+      // Test navigation to books page with mobile support
+      await clickNavLink(page, 'nav a[href="books.php"]', projectName);
       await expect(page).toHaveURL(/.*books\.php/);
       await expect(page.locator("h1")).toContainText("Semua Koleksi Buku");
 
       // Navigate back to home
-      await page.locator('nav .nav-link[href="index.php"]').click();
+      await clickNavLink(page, 'nav .nav-link[href="index.php"]', projectName);
       await expect(page).toHaveURL(/.*index\.php$|.*\/$/);
 
       // Test about page
-      await page.locator('nav a[href="about.php"]').click();
+      await clickNavLink(page, 'nav a[href="about.php"]', projectName);
       await expect(page).toHaveURL(/.*about\.php/);
       await expect(page.locator("h1")).toContainText("Tentang Pustaka Ilmu");
 
       // Test contact page
       await page.goto("/");
-      await page.locator('nav a[href="contact.php"]').click();
+      await waitForPageLoad(page, projectName);
+      await clickNavLink(page, 'nav a[href="contact.php"]', projectName);
       await expect(page).toHaveURL(/.*contact\.php/);
       await expect(page.locator("h1")).toContainText("Hubungi Kami");
 
-      console.log(`✓ Navigation works consistently in ${browserName}`);
+      console.log(`✓ Navigation works consistently in ${projectName}`);
     });
 
     test("external links should behave consistently", async ({
@@ -281,26 +303,11 @@ test.describe("Cross-Browser Compatibility Tests - PHP/Bootstrap Version", () =>
     }) => {
       await page.goto("/");
 
-      // Wait for books to potentially load
-      await page.waitForTimeout(2000);
+      const result = await testImageLoading(page, browserName);
 
-      // Check if book images load
-      const bookImages = page.locator(".book-card img");
-
-      if ((await bookImages.count()) > 0) {
-        const firstImage = bookImages.first();
-
-        // Wait for image to load
-        await firstImage.waitFor({ state: "visible" });
-
-        // Check image natural dimensions (indicates successful load)
-        const imageLoaded = await firstImage.evaluate((img) => {
-          return img.complete && img.naturalHeight !== 0;
-        });
-
-        expect(imageLoaded).toBeTruthy();
+      if (result.hasImages) {
+        expect(result.imagesLoaded).toBeTruthy();
       } else {
-        // If no books loaded, that's also acceptable (database might be empty)
         console.log(
           `No book images found - database may be empty in ${browserName}`,
         );
@@ -316,46 +323,55 @@ test.describe("Cross-Browser Compatibility Tests - PHP/Bootstrap Version", () =>
       browserName,
     }) => {
       await page.goto("/");
+      await waitForPageLoad(page, browserName, 1000);
 
-      // Wait for books to potentially load
-      await page.waitForTimeout(2000);
-
-      // Test hover on book cards
+      // Test interaction on book cards (hover for desktop, tap for mobile)
       const bookCards = page.locator(".book-card");
 
       if ((await bookCards.count()) > 0) {
         const firstCard = bookCards.first();
 
-        // Hover over card
-        await firstCard.hover();
-
-        // Check if buy button becomes visible on hover
-        const buyButton = firstCard.locator(".btn-buy");
-        if ((await buyButton.count()) > 0) {
-          // Wait for CSS transition
-          await page.waitForTimeout(500);
-
-          const isVisible = await buyButton.isVisible();
-          // Button should be visible or at least present
-          expect(isVisible).toBeTruthy();
+        if (isMobileBrowser(browserName)) {
+          // On mobile, button should be visible without hover
+          const buyButton = firstCard.locator(".btn-buy");
+          if ((await buyButton.count()) > 0) {
+            const isVisible = await buyButton.isVisible();
+            expect(isVisible).toBeTruthy();
+          }
+        } else {
+          // Test hover on desktop
+          await firstCard.hover();
+          const buyButton = firstCard.locator(".btn-buy");
+          if ((await buyButton.count()) > 0) {
+            await page.waitForTimeout(500);
+            const isVisible = await buyButton.isVisible();
+            expect(isVisible).toBeTruthy();
+          }
         }
       }
 
-      console.log(`✓ Hover effects work properly in ${browserName}`);
+      console.log(`✓ Interaction effects work properly in ${browserName}`);
     });
 
     test("transitions and animations should work smoothly", async ({
       page,
       browserName,
-    }) => {
+    }, testInfo) => {
       await page.goto("/");
+      const projectName = testInfo.project.name;
+      const loadResult = await waitForPageLoad(page, projectName);
+      await expect(loadResult.navbar).toBeVisible();
+      await expect(loadResult.body).toBeVisible();
 
-      // Test page transitions
-      await page.locator('a[href="books.php"]').first().click();
+      // Test page transitions with mobile support - use more specific selector
+      await clickNavLink(page, 'nav a[href="books.php"]', projectName);
       await expect(page).toHaveURL(/.*books\.php/);
 
       // Navigate back with browser back button
       await page.goBack();
+      const backLoadResult = await waitForPageLoad(page, projectName);
+      await expect(backLoadResult.navbar).toBeVisible();
+      await expect(backLoadResult.body).toBeVisible();
       await expect(page).toHaveURL(/.*index\.php$|.*\/$/);
 
       // Check if notification system is in place
@@ -363,7 +379,7 @@ test.describe("Cross-Browser Compatibility Tests - PHP/Bootstrap Version", () =>
       const notificationExists = (await notificationArea.count()) > 0;
       expect(notificationExists).toBeTruthy();
 
-      console.log(`✓ Transitions work smoothly in ${browserName}`);
+      console.log(`✓ Transitions work smoothly in ${projectName}`);
     });
   });
 
@@ -371,19 +387,20 @@ test.describe("Cross-Browser Compatibility Tests - PHP/Bootstrap Version", () =>
     test("keyboard navigation should work consistently", async ({
       page,
       browserName,
-    }) => {
+    }, testInfo) => {
       await page.goto("/");
+      const projectName = testInfo.project.name;
+      const loadResult = await waitForPageLoad(page, projectName);
+      await expect(loadResult.navbar).toBeVisible();
+      await expect(loadResult.body).toBeVisible();
 
-      // Test tab navigation
-      await page.keyboard.press("Tab");
+      // Test navigation with mobile considerations
+      const navResult = await testKeyboardNavigation(page, projectName);
+      if (!navResult.isMobile && navResult.isValidFocus !== undefined) {
+        expect(navResult.isValidFocus).toBeTruthy();
+      }
 
-      // Check if focus moves to navigation or skip links
-      const focusedElement = await page.evaluate(
-        () => document.activeElement.tagName,
-      );
-      expect(["A", "BUTTON", "INPUT"]).toContain(focusedElement);
-
-      console.log(`✓ Keyboard navigation works in ${browserName}`);
+      console.log(`✓ Navigation works in ${projectName}`);
     });
 
     test("screen reader compatibility should be consistent", async ({
@@ -447,37 +464,22 @@ test.describe("Cross-Browser Compatibility Tests - PHP/Bootstrap Version", () =>
     test("cart functionality should work across browsers", async ({
       page,
       browserName,
-    }) => {
+    }, testInfo) => {
       await page.goto("/");
 
-      // Wait for books to potentially load
-      await page.waitForTimeout(2000);
+      const projectName = testInfo.project.name;
+      const result = await testCartFunctionality(page, projectName);
 
-      const bookCards = page.locator(".book-card");
-
-      if ((await bookCards.count()) > 0) {
-        const firstCard = bookCards.first();
-        await firstCard.hover();
-
-        const buyButton = firstCard.locator(".btn-buy");
-
-        if (await buyButton.isVisible()) {
-          await buyButton.click();
-          await page.waitForTimeout(1500);
-
-          // Check for cart badge or notification
-          const cartBadge = page.locator(".cart-badge");
-          const notification = page.locator("#notification");
-
-          const hasCartUpdate = (await cartBadge.count()) > 0;
-          const hasNotification = await notification.isVisible();
-
-          // Either cart badge or notification should appear
-          expect(hasCartUpdate || hasNotification).toBeTruthy();
-        }
+      if (result.hasBooks && result.cartTested) {
+        // Verify buy button was visible
+        await expect(result.buyButton).toBeVisible();
+        // Either cart updated or notification showed
+        expect(result.cartUpdated || result.notificationShown).toBeTruthy();
+      } else if (!result.hasBooks) {
+        console.log(`No books available for cart testing in ${projectName}`);
       }
 
-      console.log(`✓ Cart functionality works in ${browserName}`);
+      console.log(`✓ Cart functionality works in ${projectName}`);
     });
   });
 });

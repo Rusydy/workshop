@@ -150,9 +150,25 @@ if (!isset($_SESSION['cart_count'])) {
             width: 80%;
         }
         
-        .book-card:hover .btn-buy {
+        .book-card:hover .btn-buy,
+        .book-card.touch-active .btn-buy {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
+        }
+        
+        /* Mobile-specific styles for better touch interaction */
+        @media (hover: none) and (pointer: coarse) {
+            .btn-buy {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                position: static;
+                width: 100%;
+                margin-top: 1rem;
+            }
+            
+            .book-card {
+                padding-bottom: 1rem;
+            }
         }
         
         .footer {
@@ -180,7 +196,7 @@ if (!isset($_SESSION['cart_count'])) {
         <div class="container">
             <a class="navbar-brand" href="index.php">Pustaka Ilmu 📚</a>
             
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             

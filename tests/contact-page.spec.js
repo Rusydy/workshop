@@ -1,4 +1,10 @@
 const { test, expect } = require("@playwright/test");
+const {
+  isMobileBrowser,
+  waitForPageLoad,
+  clickNavLink,
+  fillFormInput,
+} = require("./mobile-helpers");
 
 test.describe("Contact Page Tests - PHP/Bootstrap Version", () => {
   test.beforeEach(async ({ page }) => {
@@ -323,26 +329,36 @@ test.describe("Contact Page Tests - PHP/Bootstrap Version", () => {
     expect(alertCalled).toBeFalsy();
   });
 
-  test("should have working navigation links", async ({ page }) => {
-    // Test brand link
-    const brandLink = page.locator('.navbar-brand[href="index.php"]');
-    await brandLink.click();
+  test("should have working navigation links", async ({
+    page,
+    browserName,
+  }) => {
+    const loadResult1 = await waitForPageLoad(page, browserName);
+    await expect(loadResult1.navbar).toBeVisible();
+    await expect(loadResult1.body).toBeVisible();
+
+    // Test brand link with mobile support
+    await clickNavLink(page, '.navbar-brand[href="index.php"]', browserName);
     await expect(page).toHaveURL(/.*index\.php$|.*\/$/);
 
     // Go back to contact
     await page.goto("/contact.php");
+    const loadResult2 = await waitForPageLoad(page, browserName);
+    await expect(loadResult2.navbar).toBeVisible();
+    await expect(loadResult2.body).toBeVisible();
 
-    // Test books navigation
-    const booksLink = page.locator('nav a[href="books.php"]');
-    await booksLink.click();
+    // Test books navigation with mobile support
+    await clickNavLink(page, 'nav a[href="books.php"]', browserName);
     await expect(page).toHaveURL(/.*books\.php/);
 
     // Go back to contact
     await page.goto("/contact.php");
+    const loadResult3 = await waitForPageLoad(page, browserName);
+    await expect(loadResult3.navbar).toBeVisible();
+    await expect(loadResult3.body).toBeVisible();
 
-    // Test about navigation
-    const aboutLink = page.locator('nav a[href="about.php"]');
-    await aboutLink.click();
+    // Test about navigation with mobile support
+    await clickNavLink(page, 'nav a[href="about.php"]', browserName);
     await expect(page).toHaveURL(/.*about\.php/);
   });
 
@@ -377,17 +393,41 @@ test.describe("Contact Page Tests - PHP/Bootstrap Version", () => {
     expect(isOnContactPage || hasAlert).toBeTruthy();
   });
 
-  test("should maintain form state during interaction", async ({ page }) => {
-    // Fill some fields
-    await page.fill("#name", "John Doe");
-    await page.fill("#email", "john@example.com");
+  test("should maintain form state during interaction", async ({
+    page,
+    browserName,
+  }) => {
+    const loadResult1 = await waitForPageLoad(page, browserName);
+    await expect(loadResult1.navbar).toBeVisible();
+    await expect(loadResult1.body).toBeVisible();
 
-    // Navigate away (but don't submit)
-    await page.click('nav a[href="about.php"]');
-    await page.waitForTimeout(500);
+    // Fill some fields with mobile-aware input handling
+    const nameInput = await fillFormInput(
+      page,
+      "#name",
+      "John Doe",
+      browserName,
+    );
+    await expect(nameInput).toHaveValue("John Doe");
+    const emailInput = await fillFormInput(
+      page,
+      "#email",
+      "john@example.com",
+      browserName,
+    );
+    await expect(emailInput).toHaveValue("john@example.com");
+
+    // Navigate away (but don't submit) with mobile support
+    await clickNavLink(page, 'nav a[href="about.php"]', browserName);
+    const loadResult2 = await waitForPageLoad(page, browserName);
+    await expect(loadResult2.navbar).toBeVisible();
+    await expect(loadResult2.body).toBeVisible();
 
     // Come back
     await page.goto("/contact.php");
+    const loadResult3 = await waitForPageLoad(page, browserName);
+    await expect(loadResult3.navbar).toBeVisible();
+    await expect(loadResult3.body).toBeVisible();
 
     // Form should be reset (this is expected behavior)
     const nameValue = await page.inputValue("#name");
