@@ -217,6 +217,9 @@ if (!isset($_SESSION['cart_count'])) {
                 </ul>
                 
                 <div class="d-flex align-items-center">
+                    <a href="admin/login.php" class="nav-link me-3" title="Admin Panel">
+                        <i class="fas fa-user-shield"></i>
+                    </a>
                     <a href="cart.php" class="cart-icon text-decoration-none">
                         <i class="fas fa-shopping-cart"></i>
                         <?php if ($_SESSION['cart_count'] > 0): ?>
