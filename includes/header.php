@@ -201,12 +201,12 @@ if (!isset($_SESSION['cart_count'])) {
                 </ul>
                 
                 <div class="d-flex align-items-center">
-                    <div class="cart-icon">
+                    <a href="cart.php" class="cart-icon text-decoration-none">
                         <i class="fas fa-shopping-cart"></i>
                         <?php if ($_SESSION['cart_count'] > 0): ?>
                             <span class="cart-badge"><?php echo $_SESSION['cart_count']; ?></span>
                         <?php endif; ?>
-                    </div>
+                    </a>
                 </div>
             </div>
         </div>
