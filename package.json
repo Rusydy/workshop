@@ -1,8 +1,8 @@
 {
-  "name": "pustaka-ilmu-bookstore",
-  "version": "1.0.0",
-  "description": "A modern Indonesian bookstore website with Playwright testing",
-  "main": "index.html",
+  "name": "pustaka-ilmu-bookstore-php",
+  "version": "2.0.0",
+  "description": "A modern Indonesian bookstore website built with PHP, Bootstrap, and MySQL with Playwright testing",
+  "main": "index.php",
   "scripts": {
     "test": "playwright test",
     "test:ui": "playwright test --ui",
@@ -11,12 +11,17 @@
     "test:report": "playwright show-report",
     "test:all-pages": "node test-all-pages.js",
     "test:all-pages:full": "node test-all-pages.js --full",
-    "serve": "http-server -p 8080 -o",
-    "dev": "http-server -p 8080",
-    "install:browsers": "playwright install"
+    "serve": "php -S localhost:8000",
+    "dev": "php -S localhost:8000",
+    "setup": "php setup_database.php",
+    "install:browsers": "playwright install",
+    "start": "npm run setup && npm run serve"
   },
   "keywords": [
     "bookstore",
+    "php",
+    "bootstrap",
+    "mysql",
     "playwright",
     "testing",
     "e2e"
@@ -24,7 +29,10 @@
   "author": "Pustaka Ilmu Team",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
-    "http-server": "^14.1.1"
+    "@playwright/test": "^1.40.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "php": ">=7.4.0"
   }
 }

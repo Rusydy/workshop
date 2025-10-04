@@ -1,82 +1,117 @@
-# Pustaka Ilmu - PHP/Bootstrap Version
+# Pustaka Ilmu - PHP/Bootstrap Bookstore Website 📚
 
-This is a converted version of the Pustaka Ilmu bookstore website, now using PHP, Bootstrap, and MySQL instead of the original TailwindCSS and static JSON data.
+A modern Indonesian bookstore website built with **PHP**, **Bootstrap 5**, and **MySQL**, complete with comprehensive **Playwright testing**.
 
-## Features
+## 🚀 Features
 
-- **Responsive Design**: Built with Bootstrap 5 for mobile-first responsive design
-- **Dynamic Content**: Books data loaded from MySQL database
-- **Shopping Cart**: Session-based cart functionality
-- **Contact Form**: Working contact form with validation
-- **Clean PHP Architecture**: Modular structure with includes and proper separation
+- **📱 Responsive Design**: Bootstrap 5 mobile-first responsive layout
+- **🗄️ Dynamic Content**: Book data loaded from MySQL database
+- **🛒 Shopping Cart**: PHP session-based cart functionality
+- **📝 Contact Form**: Working contact form with server-side validation
+- **🔒 Security**: XSS prevention, SQL injection protection with PDO
+- **🧪 Comprehensive Testing**: Playwright E2E tests for all functionality
 
-## File Structure
+## 📁 Project Structure
 
 ```
 workshop/
 ├── config/
-│   └── database.php          # Database connection configuration
+│   └── database.php          # Database connection & configuration
 ├── includes/
 │   ├── header.php           # Common header with navigation
-│   └── footer.php           # Common footer with scripts
-├── index.php                # Homepage with trending books
+│   └── footer.php           # Common footer with JavaScript
+├── assets/
+│   └── js/                  # Additional JavaScript files (if needed)
+├── tests/                   # Playwright test files
+│   ├── homepage.spec.js     # Homepage tests
+│   ├── books-page.spec.js   # Books collection tests
+│   ├── about-page.spec.js   # About page tests
+│   ├── contact-page.spec.js # Contact form tests
+│   ├── api-integration.spec.js # Database & cart integration tests
+│   └── cross-browser.spec.js   # Cross-browser compatibility
+├── index.php               # Homepage with trending books
 ├── books.php               # All books listing page
 ├── about.php               # About us page
 ├── contact.php             # Contact page with form
 ├── add_to_cart.php         # AJAX endpoint for cart functionality
-├── setup_database.php      # Database setup script
-└── README-PHP.md           # This file
+├── setup_database.php      # Database initialization script
+├── playwright.config.js    # Playwright test configuration
+├── package.json           # Node.js dependencies for testing
+└── test-all-pages.js      # Test runner script
 ```
 
-## Database Configuration
+## 🛠️ Technology Stack
 
-The website uses the following database configuration (as specified in `config/database.php`):
+- **Backend**: PHP 7.4+
+- **Database**: MySQL/MariaDB
+- **Frontend**: Bootstrap 5.3.0
+- **Icons**: Font Awesome 6.4.0
+- **Fonts**: Google Fonts (Poppins)
+- **Testing**: Playwright with Node.js
 
+## ⚙️ Setup Instructions
+
+### 1. Prerequisites
+
+- PHP 7.4 or higher with PDO MySQL extension
+- MySQL/MariaDB server running on port 3316
+- Node.js 16+ (for testing)
+
+### 2. Database Setup
+
+The website uses these database credentials:
 ```php
-$host = "127.0.0.1";
-$user = "root";
-$pass = "";
-$name = "db_stik";
-$port = 3316;
+Host: 127.0.0.1
+Port: 3316
+Database: db_stik
+Username: root
+Password: (empty)
 ```
 
-## Setup Instructions
-
-### 1. Database Setup
-
-First, ensure your MySQL/MariaDB server is running on port 3316, then run:
-
+**Initialize the database:**
 ```bash
 php setup_database.php
 ```
 
 This will:
-- Create the `db_stik` database if it doesn't exist
-- Create the `books` table with the correct structure
-- Insert sample book data (12 books)
+- Create the `db_stik` database
+- Create the `books` table
+- Insert 12 sample books
 
-### 2. Web Server
-
-You can run the website using PHP's built-in server:
+### 3. Start the Server
 
 ```bash
+# Using PHP built-in server
 php -S localhost:8000
+
+# Or using npm script
+npm run serve
 ```
 
-Then visit: http://localhost:8000
+Visit: http://localhost:8000
 
-### 3. Production Setup
+### 4. Run Tests (Optional)
 
-For production deployment:
-1. Copy all files to your web server
-2. Update database credentials in `config/database.php`
-3. Ensure your web server has PHP 7.4+ with PDO MySQL extension
-4. Configure proper file permissions
+```bash
+# Install testing dependencies
+npm install
+npm run install:browsers
 
-## Database Schema
+# Run all tests
+npm test
+
+# Run specific test suites
+npm run test:all-pages        # Quick test (Chromium only)
+npm run test:all-pages:full   # Full test (all browsers)
+
+# Interactive testing
+npm run test:ui
+npm run test:debug
+```
+
+## 📊 Database Schema
 
 ### Books Table
-
 ```sql
 CREATE TABLE `books` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -88,54 +123,10 @@ CREATE TABLE `books` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-## Key Changes from Original
-
-### 1. CSS Framework Migration
-- **From**: TailwindCSS with custom configuration
-- **To**: Bootstrap 5 with custom CSS variables for brand colors
-
-### 2. JavaScript Framework Migration
-- **From**: Alpine.js for reactivity
-- **To**: Vanilla JavaScript with Bootstrap components
-
-### 3. Data Source Migration
-- **From**: Static JSON file (`data/books.json`)
-- **To**: MySQL database with PDO
-
-### 4. Architecture Migration
-- **From**: Static HTML files
-- **To**: Dynamic PHP with includes and session management
-
-## Features Implementation
-
-### Shopping Cart
-- Session-based cart count tracking
-- AJAX add-to-cart functionality
-- Visual cart badge in navigation
-- Success notifications
-
-### Navigation
-- Active page highlighting
-- Responsive mobile menu
-- Consistent header/footer across all pages
-
-### Book Display
-- Dynamic book loading from database
-- Hover effects and animations
-- Price formatting for Indonesian Rupiah
-- Responsive grid layout
-
-### Contact Form
-- Server-side validation
-- Error and success message display
-- Form data retention on error
-- Professional styling
-
-## Customization
+## 🎨 Customization
 
 ### Colors
-The website uses CSS custom properties for easy color customization:
-
+Modify CSS variables in `includes/header.php`:
 ```css
 :root {
     --primary-color: #1a7f72;
@@ -146,58 +137,102 @@ The website uses CSS custom properties for easy color customization:
 ```
 
 ### Adding Books
-Add books directly to the database:
-
 ```sql
 INSERT INTO books (title, author, price, image_url) VALUES
-('Your Book Title', 'Author Name', 99000.00, 'https://your-image-url.com');
+('New Book Title', 'Author Name', 99000.00, 'https://image-url.com');
 ```
 
-### Styling
-Custom styles are defined in the `<style>` section of `includes/header.php`. For larger projects, consider moving these to separate CSS files.
+### Modifying Pages
+- **Header/Navigation**: Edit `includes/header.php`
+- **Footer**: Edit `includes/footer.php`
+- **Styling**: Modify CSS in `includes/header.php` or create separate CSS files
 
-## Browser Support
+## 🧪 Testing Features
+
+- **Database Integration**: Tests MySQL connection and data loading
+- **Cart Functionality**: Tests PHP session-based cart operations
+- **Form Validation**: Tests contact form with various scenarios
+- **Security**: Tests XSS prevention and input sanitization
+- **Responsive Design**: Tests Bootstrap responsive behavior
+- **Cross-browser**: Tests compatibility across browsers
+- **Performance**: Tests page load times and error handling
+
+## 🔒 Security Features
+
+- **SQL Injection Prevention**: PDO prepared statements
+- **XSS Protection**: `htmlspecialchars()` output escaping
+- **Input Validation**: Server-side form validation
+- **Session Security**: PHP session management for cart
+
+## 📱 Browser Support
 
 - Chrome/Chromium 90+
 - Firefox 88+
 - Safari 14+
 - Edge 90+
+- Mobile browsers (iOS Safari, Chrome Mobile)
 
-## Dependencies
+## 🚀 Production Deployment
 
-### PHP Extensions Required
-- PDO
-- PDO MySQL Driver
-- Session support
+1. **Upload files** to your web server
+2. **Update database credentials** in `config/database.php`
+3. **Create database** and run `setup_database.php`
+4. **Configure web server** (Apache/Nginx) for PHP
+5. **Set proper file permissions**
+6. **Enable PHP extensions**: PDO, PDO_MySQL
 
-### External Libraries
-- Bootstrap 5.3.0 (CSS + JS)
-- Font Awesome 6.4.0
-- Google Fonts (Poppins)
+### Apache .htaccess Example
+```apache
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+```
 
-## Security Considerations
+## 📚 Available Pages
 
-- SQL injection prevention using PDO prepared statements
-- XSS prevention with `htmlspecialchars()`
-- Input validation on contact form
-- Session-based cart (not cookie-based for security)
+- **Homepage** (`index.php`): Hero section + trending books
+- **Books** (`books.php`): Complete book collection
+- **About** (`about.php`): Company information and statistics
+- **Contact** (`contact.php`): Contact form and company details
 
-## Performance
+## 🛒 Cart Features
 
-- Optimized database queries
-- Minimal external dependencies
-- Responsive images with proper sizing
-- CSS and JS loaded from CDN for caching
+- Session-based cart (persists across page loads)
+- AJAX add-to-cart functionality
+- Live cart counter in navigation
+- Success notifications
 
-## Support
+## 📋 NPM Scripts
 
-If you encounter any issues:
-1. Check MySQL connection and credentials
-2. Verify PHP version and extensions
-3. Check file permissions
-4. Review error logs
+```bash
+npm run serve          # Start PHP server
+npm run dev            # Start PHP server (alias)
+npm run setup          # Initialize database
+npm run start          # Setup database + start server
+npm test              # Run all Playwright tests
+npm run test:ui       # Interactive test runner
+npm run test:debug    # Debug mode testing
+npm run test:report   # View test results
+```
 
-For development questions, refer to:
-- [Bootstrap Documentation](https://getbootstrap.com/docs/5.3/)
-- [PHP PDO Documentation](https://www.php.net/manual/en/book.pdo.php)
-- [MySQL Documentation](https://dev.mysql.com/doc/)
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch
+3. Run tests: `npm test`
+4. Submit pull request
+
+## 📞 Support
+
+For issues or questions:
+- Check database connection settings
+- Verify PHP version and extensions
+- Review error logs
+- Run database setup script
+
+---
+
+**Built with ❤️ for Indonesian book lovers**
+
+*© 2025 Toko Buku Pustaka Ilmu - Menyebarkan literasi ke seluruh Indonesia*

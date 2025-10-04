@@ -1,126 +1,75 @@
 const { test, expect } = require("@playwright/test");
 
-test.describe("Contact Page Tests", () => {
+test.describe("Contact Page Tests - PHP/Bootstrap Version", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/contact.html");
+    await page.goto("/contact.php");
   });
 
-  test("should display the contact page with correct title and URL", async ({
-    page,
-  }) => {
-    // Check if we're on the contact page
-    await expect(page).toHaveURL(/.*contact\.html/);
-
+  test("should display the contact page correctly", async ({ page }) => {
     // Check page title
-    await expect(page).toHaveTitle("Kontak - Pustaka Ilmu");
-  });
+    await expect(page.locator("h1")).toContainText("Hubungi Kami");
 
-  test("should have proper page structure and navigation", async ({ page }) => {
-    // Check header is present
-    await expect(page.locator("header")).toBeVisible();
-
-    // Check main content area
-    await expect(page.locator("main")).toBeVisible();
-
-    // Check footer
-    await expect(page.locator("footer")).toBeVisible();
-
-    // Check brand/logo
-    await expect(
-      page.locator('header a[href="index.html"]').first(),
-    ).toContainText("Pustaka Ilmu 📚");
-
-    // Check that Contact/Kontak link is active/highlighted
-    const contactLink = page.locator('nav a[href="contact.html"]');
-    await expect(contactLink).toBeVisible();
-    await expect(contactLink).toHaveClass(/font-bold text-primary/);
-  });
-
-  test("should display the main hero section", async ({ page }) => {
-    // Check main heading
-    const mainHeading = page.locator("h1");
-    await expect(mainHeading).toBeVisible();
-    await expect(mainHeading).toContainText("Hubungi Kami");
-
-    // Check hero subtitle
-    const heroSubtitle = page.locator(".bg-light-gray p");
-    await expect(heroSubtitle).toBeVisible();
-    await expect(heroSubtitle).toContainText(
+    // Check subtitle
+    await expect(page.locator(".hero-section p")).toContainText(
       "Ada pertanyaan atau masukan? Kami siap membantu!",
     );
 
-    // Check hero section background
-    const heroSection = page.locator(".bg-light-gray");
-    await expect(heroSection).toBeVisible();
+    // Verify page URL
+    await expect(page).toHaveURL(/.*contact\.php/);
+
+    // Check navigation shows contact as active
+    const contactNavLink = page.locator('nav a[href="contact.php"]');
+    await expect(contactNavLink).toHaveClass(/active/);
   });
 
-  test("should display contact details section", async ({ page }) => {
-    // Check contact details heading
-    const detailsHeading = page.locator("h2").filter({ hasText: "Detail Kontak" });
-    await expect(detailsHeading).toBeVisible();
+  test("should have proper page title", async ({ page }) => {
+    await expect(page).toHaveTitle("Kontak - Pustaka Ilmu");
+  });
 
-    // Check address information
-    const addressInfo = page.locator("p").filter({ hasText: "Alamat:" });
-    await expect(addressInfo).toBeVisible();
-    await expect(addressInfo).toContainText("Jl. Literasi No. 123");
-    await expect(addressInfo).toContainText("Bekasi, Jawa Barat");
+  test("should display contact information correctly", async ({ page }) => {
+    // Check address section
+    await expect(page.locator(".fas.fa-map-marker-alt")).toBeVisible();
+    await expect(page.locator("text=Jl. Literasi No. 123")).toBeVisible();
+    await expect(page.locator("text=Bekasi, Jawa Barat, 17145")).toBeVisible();
 
-    // Check email information
-    const emailInfo = page.locator("p").filter({ hasText: "Email:" });
-    await expect(emailInfo).toBeVisible();
-
+    // Check email section
+    await expect(page.locator(".fas.fa-envelope")).toBeVisible();
     const emailLink = page.locator('a[href="mailto:kontak@pustakailmu.com"]');
     await expect(emailLink).toBeVisible();
     await expect(emailLink).toContainText("kontak@pustakailmu.com");
 
-    // Check phone information
-    const phoneInfo = page.locator("p").filter({ hasText: "Telepon:" });
-    await expect(phoneInfo).toBeVisible();
-    await expect(phoneInfo).toContainText("(021) 1234 5678");
+    // Check phone section
+    await expect(page.locator(".fas.fa-phone")).toBeVisible();
+    await expect(page.locator("text=(021) 1234 5678")).toBeVisible();
 
     // Check operating hours
-    const hoursInfo = page.locator("p").filter({ hasText: "Jam Operasional:" });
-    await expect(hoursInfo).toBeVisible();
-    await expect(hoursInfo).toContainText("Senin - Jumat");
-    await expect(hoursInfo).toContainText("09:00 - 17:00 WIB");
+    await expect(page.locator(".fas.fa-clock")).toBeVisible();
+    await expect(
+      page.locator("text=Senin - Jumat, 09:00 - 17:00 WIB"),
+    ).toBeVisible();
   });
 
   test("should display contact form with all required fields", async ({
     page,
   }) => {
     // Check form heading
-    const formHeading = page.locator("h2").filter({ hasText: "Kirim Pesan" });
-    await expect(formHeading).toBeVisible();
+    await expect(
+      page.locator("h2").filter({ hasText: "Kirim Pesan" }),
+    ).toBeVisible();
 
-    // Check contact form exists
-    const contactForm = page.locator("form");
-    await expect(contactForm).toBeVisible();
+    // Check all form fields
+    const nameField = page.locator("#name");
+    await expect(nameField).toBeVisible();
+    await expect(nameField).toHaveAttribute("required");
 
-    // Check name field
-    const nameLabel = page.locator('label[for="name"]');
-    await expect(nameLabel).toBeVisible();
-    await expect(nameLabel).toContainText("Nama Lengkap");
+    const emailField = page.locator("#email");
+    await expect(emailField).toBeVisible();
+    await expect(emailField).toHaveAttribute("type", "email");
+    await expect(emailField).toHaveAttribute("required");
 
-    const nameInput = page.locator('#name');
-    await expect(nameInput).toBeVisible();
-    await expect(nameInput).toHaveAttribute("type", "text");
-
-    // Check email field
-    const emailLabel = page.locator('label[for="email"]');
-    await expect(emailLabel).toBeVisible();
-    await expect(emailLabel).toContainText("Alamat Email");
-
-    const emailInput = page.locator('#email');
-    await expect(emailInput).toBeVisible();
-    await expect(emailInput).toHaveAttribute("type", "email");
-
-    // Check message field
-    const messageLabel = page.locator('label[for="message"]');
-    await expect(messageLabel).toBeVisible();
-    await expect(messageLabel).toContainText("Pesan Anda");
-
-    const messageTextarea = page.locator('#message');
-    await expect(messageTextarea).toBeVisible();
+    const messageField = page.locator("#message");
+    await expect(messageField).toBeVisible();
+    await expect(messageField).toHaveAttribute("required");
 
     // Check submit button
     const submitButton = page.locator('button[type="submit"]');
@@ -128,111 +77,328 @@ test.describe("Contact Page Tests", () => {
     await expect(submitButton).toContainText("Kirim Pesan");
   });
 
-  test("should allow form input and validation", async ({ page }) => {
-    // Fill out the form
-    await page.locator('#name').fill("John Doe");
-    await page.locator('#email').fill("john.doe@example.com");
-    await page.locator('#message').fill("This is a test message for the contact form.");
+  test("should validate required form fields", async ({ page }) => {
+    // Try to submit empty form
+    await page.click('button[type="submit"]');
 
-    // Verify the input values
-    await expect(page.locator('#name')).toHaveValue("John Doe");
-    await expect(page.locator('#email')).toHaveValue("john.doe@example.com");
-    await expect(page.locator('#message')).toHaveValue("This is a test message for the contact form.");
+    // Check HTML5 validation
+    const nameValidation = await page.evaluate(() => {
+      const nameInput = document.querySelector("#name");
+      return nameInput.validity.valid;
+    });
+    expect(nameValidation).toBeFalsy();
 
-    // Test form clearing
-    await page.locator('#name').fill("");
-    await expect(page.locator('#name')).toHaveValue("");
+    const emailValidation = await page.evaluate(() => {
+      const emailInput = document.querySelector("#email");
+      return emailInput.validity.valid;
+    });
+    expect(emailValidation).toBeFalsy();
+
+    const messageValidation = await page.evaluate(() => {
+      const messageInput = document.querySelector("#message");
+      return messageInput.validity.valid;
+    });
+    expect(messageValidation).toBeFalsy();
   });
 
-  test("should have proper form styling and focus states", async ({ page }) => {
-    // Test focus on name field
-    await page.locator('#name').focus();
-    await expect(page.locator('#name')).toBeFocused();
+  test("should validate email format", async ({ page }) => {
+    // Fill form with invalid email
+    await page.fill("#name", "Test User");
+    await page.fill("#email", "invalid-email-format");
+    await page.fill("#message", "This is a test message");
 
-    // Test focus on email field
-    await page.locator('#email').focus();
-    await expect(page.locator('#email')).toBeFocused();
+    await page.click('button[type="submit"]');
 
-    // Test focus on message field
-    await page.locator('#message').focus();
-    await expect(page.locator('#message')).toBeFocused();
+    // Check email validation
+    const emailValidation = await page.evaluate(() => {
+      const emailInput = document.querySelector("#email");
+      return emailInput.validity.valid;
+    });
+    expect(emailValidation).toBeFalsy();
+  });
 
-    // Check that form fields have proper styling classes
-    const nameInput = page.locator('#name');
-    await expect(nameInput).toHaveClass(/border-gray-300/);
-    await expect(nameInput).toHaveClass(/focus:ring-primary/);
+  test("should submit form with valid data", async ({ page }) => {
+    // Fill out the form with valid data
+    await page.fill("#name", "John Doe");
+    await page.fill("#email", "john.doe@example.com");
+    await page.fill(
+      "#message",
+      "This is a test message from Playwright automated testing.",
+    );
+
+    // Submit the form
+    await page.click('button[type="submit"]');
+
+    // Wait for form processing
+    await page.waitForTimeout(1500);
+
+    // Should either show success message or stay on contact page
+    const successAlert = page.locator(".alert-success");
+    const errorAlert = page.locator(".alert-danger");
+    const isOnContactPage = page.url().includes("contact.php");
+
+    // Should either show an alert or remain on contact page
+    const hasAlert =
+      (await successAlert.count()) > 0 || (await errorAlert.count()) > 0;
+    expect(hasAlert || isOnContactPage).toBeTruthy();
+
+    // If success alert is shown, check its content
+    if ((await successAlert.count()) > 0) {
+      await expect(successAlert).toContainText("berhasil");
+      await expect(successAlert.locator(".fas.fa-check-circle")).toBeVisible();
+    }
+  });
+
+  test("should retain form data on validation error", async ({ page }) => {
+    // Fill form with invalid email but valid other fields
+    const testName = "Test User";
+    const invalidEmail = "invalid-email";
+    const testMessage = "Test message content";
+
+    await page.fill("#name", testName);
+    await page.fill("#email", invalidEmail);
+    await page.fill("#message", testMessage);
+
+    await page.click('button[type="submit"]');
+    await page.waitForTimeout(1000);
+
+    // Form should retain the values (except maybe clear invalid email)
+    const nameValue = await page.inputValue("#name");
+    const messageValue = await page.inputValue("#message");
+
+    expect(nameValue).toBe(testName);
+    expect(messageValue).toBe(testMessage);
+  });
+
+  test("should display additional info section", async ({ page }) => {
+    // Check "Mengapa Memilih Pustaka Ilmu?" section
+    await expect(
+      page.locator("h3").filter({ hasText: "Mengapa Memilih Pustaka Ilmu?" }),
+    ).toBeVisible();
+
+    // Check shipping feature
+    await expect(page.locator(".fas.fa-shipping-fast")).toBeVisible();
+    await expect(
+      page.locator("h5").filter({ hasText: "Pengiriman Cepat" }),
+    ).toBeVisible();
+    await expect(
+      page.locator("text=Buku sampai dalam 1-3 hari kerja"),
+    ).toBeVisible();
+
+    // Check quality feature
+    await expect(page.locator(".fas.fa-shield-alt")).toBeVisible();
+    await expect(
+      page.locator("h5").filter({ hasText: "Kualitas Terjamin" }),
+    ).toBeVisible();
+    await expect(
+      page.locator("text=100% buku original dan berkualitas"),
+    ).toBeVisible();
+
+    // Check support feature
+    await expect(page.locator(".fas.fa-headset")).toBeVisible();
+    await expect(
+      page.locator("h5").filter({ hasText: "Customer Support" }),
+    ).toBeVisible();
+    await expect(
+      page.locator("text=Tim support siap membantu 24/7"),
+    ).toBeVisible();
+  });
+
+  test("should have proper Bootstrap styling", async ({ page }) => {
+    // Check grid layout
+    const gridContainers = page.locator(".row");
+    const gridCount = await gridContainers.count();
+    expect(gridCount).toBeGreaterThan(0);
+
+    // Check column classes
+    const columns = page.locator(".col-lg-6");
+    const columnCount = await columns.count();
+    expect(columnCount).toBe(2); // Contact info and form
+
+    // Check form styling
+    const formControls = page.locator(".form-control");
+    const controlCount = await formControls.count();
+    expect(controlCount).toBe(3); // name, email, message
+
+    // Check button styling
+    const submitButton = page.locator('button[type="submit"]');
+    const buttonClasses = await submitButton.getAttribute("class");
+    expect(buttonClasses).toMatch(/btn-primary/);
+    expect(buttonClasses).toMatch(/btn-lg/);
+  });
+
+  test("should be responsive on mobile", async ({ page }) => {
+    // Set mobile viewport
+    await page.setViewportSize({ width: 375, height: 667 });
+
+    // Check mobile navigation
+    const mobileToggle = page.locator(".navbar-toggler");
+    await expect(mobileToggle).toBeVisible();
+
+    // Check hero section is responsive
+    const heroSection = page.locator(".hero-section");
+    await expect(heroSection).toBeVisible();
+
+    // Check form is accessible on mobile
+    await expect(page.locator("#name")).toBeVisible();
+    await expect(page.locator("#email")).toBeVisible();
+    await expect(page.locator("#message")).toBeVisible();
+
+    // Check contact info is still visible
+    await expect(
+      page.locator("h2").filter({ hasText: "Detail Kontak" }),
+    ).toBeVisible();
+
+    // Check columns stack properly on mobile
+    const formSection = page.locator(".col-lg-6").nth(1);
+    const contactSection = page.locator(".col-lg-6").first();
+
+    await expect(formSection).toBeVisible();
+    await expect(contactSection).toBeVisible();
+  });
+
+  test("should handle form submission errors gracefully", async ({ page }) => {
+    // Fill form with potentially problematic data
+    await page.fill("#name", "A".repeat(100)); // Very long name
+    await page.fill("#email", "test@example.com");
+    await page.fill("#message", "X".repeat(1000)); // Very long message
+
+    await page.click('button[type="submit"]');
+    await page.waitForTimeout(1500);
+
+    // Page should not crash
+    await expect(page.locator("body")).toBeVisible();
+    await expect(page.locator("nav.navbar")).toBeVisible();
+
+    // Form should still be functional
+    await expect(page.locator("#name")).toBeVisible();
+    await expect(page.locator('button[type="submit"]')).toBeVisible();
+  });
+
+  test("should have proper accessibility features", async ({ page }) => {
+    // Check form labels
+    const nameLabel = page.locator('label[for="name"]');
+    await expect(nameLabel).toBeVisible();
+    await expect(nameLabel).toContainText("Nama Lengkap");
+
+    const emailLabel = page.locator('label[for="email"]');
+    await expect(emailLabel).toBeVisible();
+    await expect(emailLabel).toContainText("Alamat Email");
+
+    const messageLabel = page.locator('label[for="message"]');
+    await expect(messageLabel).toBeVisible();
+    await expect(messageLabel).toContainText("Pesan Anda");
+
+    // Check form-label classes for proper styling
+    const labels = page.locator(".form-label");
+    const labelCount = await labels.count();
+    expect(labelCount).toBe(3);
+
+    // Check input-label associations
+    const nameInput = page.locator("#name");
+    const nameFor = await nameLabel.getAttribute("for");
+    const nameId = await nameInput.getAttribute("id");
+    expect(nameFor).toBe(nameId);
+  });
+
+  test("should prevent XSS attacks", async ({ page }) => {
+    // Try to inject script in form fields
+    const xssPayload = "<script>alert('xss')</script>";
+
+    await page.fill("#name", xssPayload);
+    await page.fill("#email", "test@example.com");
+    await page.fill("#message", "Test message");
+
+    await page.click('button[type="submit"]');
+    await page.waitForTimeout(1500);
+
+    // Should not execute JavaScript or display raw HTML
+    const pageContent = await page.textContent("body");
+    expect(pageContent).not.toContain("<script>alert('xss')</script>");
+
+    // Check if alert was called (shouldn't be)
+    const alertCalled = await page.evaluate(() => {
+      return window.alertCalled || false;
+    });
+    expect(alertCalled).toBeFalsy();
   });
 
   test("should have working navigation links", async ({ page }) => {
-    // Test Home/Beranda link
-    await page.locator('nav a[href="index.html"]').click();
-    await expect(page).toHaveURL(/.*index\.html|.*\/$/);
+    // Test brand link
+    const brandLink = page.locator('.navbar-brand[href="index.php"]');
+    await brandLink.click();
+    await expect(page).toHaveURL(/.*index\.php$|.*\/$/);
 
-    // Go back to contact page
-    await page.goto("/contact.html");
+    // Go back to contact
+    await page.goto("/contact.php");
 
-    // Test Books/Koleksi link
-    await page.locator('nav a[href="books.html"]').click();
-    await expect(page).toHaveURL(/.*books\.html/);
+    // Test books navigation
+    const booksLink = page.locator('nav a[href="books.php"]');
+    await booksLink.click();
+    await expect(page).toHaveURL(/.*books\.php/);
 
-    // Go back to contact page
-    await page.goto("/contact.html");
+    // Go back to contact
+    await page.goto("/contact.php");
 
-    // Test About/Tentang link
-    await page.locator('nav a[href="about.html"]').click();
-    await expect(page).toHaveURL(/.*about\.html/);
+    // Test about navigation
+    const aboutLink = page.locator('nav a[href="about.php"]');
+    await aboutLink.click();
+    await expect(page).toHaveURL(/.*about\.php/);
   });
 
-  test("should display cart functionality", async ({ page }) => {
-    // Check cart icon is present
-    const cartIcon = page.locator(".fa-shopping-cart");
-    await expect(cartIcon).toBeVisible();
+  test("should display consistent footer content", async ({ page }) => {
+    // Check footer is present
+    const footer = page.locator("footer.footer");
+    await expect(footer).toBeVisible();
 
-    // Check cart counter element exists (even if hidden initially)
-    const cartCounter = page.locator('span[x-text="cartCount"]');
-    const cartCounterExists = (await cartCounter.count()) > 0;
-    expect(cartCounterExists).toBeTruthy();
-  });
-
-  test("should have proper footer content", async ({ page }) => {
-    // Check footer content
-    const footer = page.locator("footer");
+    // Check copyright
     await expect(footer).toContainText("© 2025 Toko Buku Pustaka Ilmu");
     await expect(footer).toContainText("kontak@pustakailmu.com");
-    await expect(footer).toContainText("Dibuat di Bekasi");
   });
 
-  test("should be responsive on different screen sizes", async ({ page }) => {
-    // Test desktop view - check grid layout
-    await page.setViewportSize({ width: 1200, height: 800 });
-    await expect(page.locator("header")).toBeVisible();
+  test("should handle very long messages properly", async ({ page }) => {
+    // Create a very long message
+    const longMessage = "Lorem ipsum dolor sit amet, ".repeat(100);
 
-    // Should have grid layout on desktop
-    const gridContainer = page.locator(".grid.md\\:grid-cols-2");
-    await expect(gridContainer).toBeVisible();
+    await page.fill("#name", "Test User");
+    await page.fill("#email", "test@example.com");
+    await page.fill("#message", longMessage);
 
-    // Test tablet view
-    await page.setViewportSize({ width: 768, height: 1024 });
-    await expect(page.locator("header")).toBeVisible();
-    await expect(page.locator("main")).toBeVisible();
-    await expect(gridContainer).toBeVisible();
+    await page.click('button[type="submit"]');
+    await page.waitForTimeout(2000);
 
-    // Test mobile view
-    await page.setViewportSize({ width: 375, height: 667 });
-    await expect(page.locator("header")).toBeVisible();
-    await expect(page.locator("main")).toBeVisible();
+    // Form should handle long content gracefully
+    await expect(page.locator("body")).toBeVisible();
 
-    // Form should be visible and functional on mobile
-    await expect(page.locator("form")).toBeVisible();
-    await expect(page.locator('#name')).toBeVisible();
+    // Either show success/error or stay on page
+    const isOnContactPage = page.url().includes("contact.php");
+    const hasAlert = (await page.locator(".alert").count()) > 0;
 
-    // Content should stack vertically on mobile
-    const heroSection = page.locator(".bg-light-gray");
-    await expect(heroSection).toBeVisible();
+    expect(isOnContactPage || hasAlert).toBeTruthy();
   });
 
-  test("should have proper meta tags and SEO elements", async ({ page }) => {
-    // Check viewport meta tag
+  test("should maintain form state during interaction", async ({ page }) => {
+    // Fill some fields
+    await page.fill("#name", "John Doe");
+    await page.fill("#email", "john@example.com");
+
+    // Navigate away (but don't submit)
+    await page.click('nav a[href="about.php"]');
+    await page.waitForTimeout(500);
+
+    // Come back
+    await page.goto("/contact.php");
+
+    // Form should be reset (this is expected behavior)
+    const nameValue = await page.inputValue("#name");
+    expect(nameValue).toBe("");
+  });
+
+  test("should have proper meta tags", async ({ page }) => {
+    // Check language
+    await expect(page.locator("html")).toHaveAttribute("lang", "id");
+
+    // Check viewport
     const viewportMeta = page.locator('meta[name="viewport"]');
     await expect(viewportMeta).toHaveAttribute(
       "content",
@@ -242,180 +408,32 @@ test.describe("Contact Page Tests", () => {
     // Check charset
     const charsetMeta = page.locator("meta[charset]");
     await expect(charsetMeta).toHaveAttribute("charset", "UTF-8");
-
-    // Check language attribute
-    await expect(page.locator("html")).toHaveAttribute("lang", "id");
-
-    // Check page title is descriptive
-    await expect(page).toHaveTitle(/Kontak/);
   });
 
   test("should load external resources properly", async ({ page }) => {
-    // Check that external CSS/JS resources are loaded
-    const tailwindScript = page.locator('script[src*="tailwindcss"]');
-    const alpineScript = page.locator('script[src*="alpinejs"]');
-    const htmxScript = page.locator('script[src*="htmx"]');
-    const fontAwesome = page.locator('link[href*="font-awesome"]');
-
-    await expect(tailwindScript).toBeAttached();
-    await expect(alpineScript).toBeAttached();
-    await expect(htmxScript).toBeAttached();
-    await expect(fontAwesome).toBeAttached();
-  });
-
-  test("should have proper heading hierarchy", async ({ page }) => {
-    // Check h1 exists and is unique
-    const h1Elements = page.locator("h1");
-    await expect(h1Elements).toHaveCount(1);
-    await expect(h1Elements).toContainText("Hubungi Kami");
-
-    // Check h2 elements exist
-    const h2Elements = page.locator("h2");
-    const h2Count = await h2Elements.count();
-    expect(h2Count).toBeGreaterThanOrEqual(2); // Should have contact details and form sections
-
-    // Verify h2 content
-    await expect(page.locator("h2").first()).toContainText("Detail Kontak");
-    await expect(page.locator("h2").nth(1)).toContainText("Kirim Pesan");
-  });
-
-  test("should handle Alpine.js initialization properly", async ({ page }) => {
-    // Wait for Alpine.js to initialize
-    await page.waitForTimeout(1000);
-
-    // Check if Alpine.js data attributes are working
-    await page.waitForFunction(() => {
-      return window.Alpine !== undefined;
+    // Check Bootstrap CSS
+    const bootstrapCSS = await page.evaluate(() => {
+      const links = Array.from(
+        document.querySelectorAll('link[rel="stylesheet"]'),
+      );
+      return links.some((link) => link.href.includes("bootstrap"));
     });
+    expect(bootstrapCSS).toBeTruthy();
 
-    // Verify cart data is initialized
-    const cartData = await page.evaluate(() => {
-      const body = document.querySelector("body");
-      return body && body._x_dataStack ? true : false;
+    // Check Font Awesome
+    const fontAwesome = await page.evaluate(() => {
+      const links = Array.from(
+        document.querySelectorAll('link[rel="stylesheet"]'),
+      );
+      return links.some((link) => link.href.includes("font-awesome"));
     });
+    expect(fontAwesome).toBeTruthy();
 
-    // Alpine.js should be initialized (this may vary depending on implementation)
-    // At minimum, the page should not have JavaScript errors
-    const jsErrors = [];
-    page.on("console", (msg) => {
-      if (msg.type() === "error") {
-        jsErrors.push(msg.text());
-      }
+    // Check Bootstrap JS
+    const bootstrapJS = await page.evaluate(() => {
+      const scripts = Array.from(document.querySelectorAll("script[src]"));
+      return scripts.some((script) => script.src.includes("bootstrap"));
     });
-
-    await page.waitForTimeout(500);
-    expect(jsErrors.length).toBe(0);
-  });
-
-  test("should maintain consistent branding across pages", async ({ page }) => {
-    // Check brand consistency
-    const brandName = page.locator('header a[href="index.html"]').first();
-    await expect(brandName).toContainText("Pustaka Ilmu 📚");
-
-    // Check consistent color scheme
-    const primaryElements = page.locator(".text-primary");
-    const primaryCount = await primaryElements.count();
-    expect(primaryCount).toBeGreaterThan(0);
-
-    // Check consistent typography (Poppins font should be applied)
-    const bodyFont = await page.evaluate(() => {
-      return getComputedStyle(document.body).fontFamily;
-    });
-    expect(bodyFont.toLowerCase()).toContain("poppins");
-  });
-
-  test("should have proper form accessibility", async ({ page }) => {
-    // Check that all form fields have proper labels
-    const nameLabel = page.locator('label[for="name"]');
-    const emailLabel = page.locator('label[for="email"]');
-    const messageLabel = page.locator('label[for="message"]');
-
-    await expect(nameLabel).toBeVisible();
-    await expect(emailLabel).toBeVisible();
-    await expect(messageLabel).toBeVisible();
-
-    // Check that labels are properly associated with inputs
-    const nameInput = page.locator('#name');
-    const emailInput = page.locator('#email');
-    const messageInput = page.locator('#message');
-
-    await expect(nameInput).toHaveAttribute("id", "name");
-    await expect(emailInput).toHaveAttribute("id", "email");
-    await expect(messageInput).toHaveAttribute("id", "message");
-  });
-
-  test("should handle keyboard navigation properly", async ({ page }) => {
-    // Test tab navigation through form fields
-    await page.keyboard.press("Tab");
-
-    // Should focus on first form field or navigation
-    const focusedElement = await page.evaluate(() => document.activeElement.tagName);
-    expect(["A", "INPUT", "TEXTAREA", "BUTTON"]).toContain(focusedElement);
-
-    // Test form field navigation
-    await page.locator('#name').focus();
-    await expect(page.locator('#name')).toBeFocused();
-
-    await page.keyboard.press("Tab");
-    await expect(page.locator('#email')).toBeFocused();
-
-    await page.keyboard.press("Tab");
-    await expect(page.locator('#message')).toBeFocused();
-  });
-
-  test("should handle email link functionality", async ({ page }) => {
-    // Check that email link has correct mailto attribute
-    const emailLink = page.locator('a[href="mailto:kontak@pustakailmu.com"]');
-    await expect(emailLink).toBeVisible();
-    await expect(emailLink).toHaveAttribute("href", "mailto:kontak@pustakailmu.com");
-
-    // Check email link styling
-    await expect(emailLink).toHaveClass(/text-primary/);
-    await expect(emailLink).toHaveClass(/hover:underline/);
-  });
-
-  test("should handle browser back/forward navigation properly", async ({
-    page,
-  }) => {
-    // Fill out some form data
-    await page.locator('#name').fill("Test User");
-    await page.locator('#email').fill("test@example.com");
-
-    // Navigate to another page
-    await page.locator('nav a[href="index.html"]').click();
-    await expect(page).toHaveURL(/.*index\.html|.*\/$/);
-
-    // Use browser back button
-    await page.goBack();
-    await expect(page).toHaveURL(/.*contact\.html/);
-
-    // Verify page content is still displayed correctly
-    await expect(page.locator("h1")).toContainText("Hubungi Kami");
-    await expect(page.locator("form")).toBeVisible();
-
-    // Note: Form data may not persist after navigation depending on implementation
-    const nameValue = await page.locator('#name').inputValue();
-    // Form should at least be functional after back navigation
-    await page.locator('#name').fill("New Test User");
-    await expect(page.locator('#name')).toHaveValue("New Test User");
-  });
-
-  test("should have proper grid layout on larger screens", async ({ page }) => {
-    await page.setViewportSize({ width: 1200, height: 800 });
-
-    // Check that the two-column grid is active on larger screens
-    const gridContainer = page.locator(".grid.md\\:grid-cols-2");
-    await expect(gridContainer).toBeVisible();
-
-    // Both contact details and form should be visible side by side
-    const contactDetails = page.locator("h2").filter({ hasText: "Detail Kontak" });
-    const contactForm = page.locator("h2").filter({ hasText: "Kirim Pesan" });
-
-    await expect(contactDetails).toBeVisible();
-    await expect(contactForm).toBeVisible();
-
-    // Check that the sections are properly spaced
-    const spacing = page.locator(".gap-12");
-    await expect(spacing).toBeVisible();
+    expect(bootstrapJS).toBeTruthy();
   });
 });

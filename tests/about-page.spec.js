@@ -1,159 +1,279 @@
 const { test, expect } = require("@playwright/test");
 
-test.describe("About Page Tests", () => {
+test.describe("About Page Tests - PHP/Bootstrap Version", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/about.html");
+    await page.goto("/about.php");
   });
 
-  test("should display the about page with correct title and URL", async ({
-    page,
-  }) => {
-    // Check if we're on the about page
-    await expect(page).toHaveURL(/.*about\.html/);
-
+  test("should display the about page correctly", async ({ page }) => {
     // Check page title
-    await expect(page).toHaveTitle("Tentang Kami - Pustaka Ilmu");
-  });
+    await expect(page.locator("h1")).toContainText("Tentang Pustaka Ilmu");
 
-  test("should have proper page structure and navigation", async ({ page }) => {
-    // Check header is present
-    await expect(page.locator("header")).toBeVisible();
-
-    // Check main content area
-    await expect(page.locator("main")).toBeVisible();
-
-    // Check footer
-    await expect(page.locator("footer")).toBeVisible();
-
-    // Check brand/logo
-    await expect(
-      page.locator('header a[href="index.html"]').first(),
-    ).toContainText("Pustaka Ilmu 📚");
-
-    // Check that About/Tentang link is active/highlighted
-    const aboutLink = page.locator('nav a[href="about.html"]');
-    await expect(aboutLink).toBeVisible();
-    await expect(aboutLink).toHaveClass(/font-bold text-primary/);
-  });
-
-  test("should display the main hero section", async ({ page }) => {
-    // Check main heading
-    const mainHeading = page.locator("h1");
-    await expect(mainHeading).toBeVisible();
-    await expect(mainHeading).toContainText("Tentang Pustaka Ilmu");
-
-    // Check hero subtitle
-    const heroSubtitle = page.locator(".bg-light-gray p");
-    await expect(heroSubtitle).toBeVisible();
-    await expect(heroSubtitle).toContainText(
+    // Check subtitle
+    await expect(page.locator(".hero-section p")).toContainText(
       "Menyebarkan literasi dan pengetahuan ke seluruh Indonesia sejak 2020",
     );
 
-    // Check hero section background
-    const heroSection = page.locator(".bg-light-gray");
-    await expect(heroSection).toBeVisible();
+    // Verify page URL
+    await expect(page).toHaveURL(/.*about\.php/);
+
+    // Check navigation shows about as active
+    const aboutNavLink = page.locator('nav a[href="about.php"]');
+    await expect(aboutNavLink).toHaveClass(/active/);
   });
 
-  test("should display mission section with proper content", async ({
-    page,
-  }) => {
+  test("should have proper page title", async ({ page }) => {
+    await expect(page).toHaveTitle("Tentang Kami - Pustaka Ilmu");
+  });
+
+  test("should display mission section", async ({ page }) => {
     // Check mission heading
-    const missionHeading = page.locator("h2").filter({ hasText: "Misi Kami" });
-    await expect(missionHeading).toBeVisible();
-    await expect(missionHeading).toContainText("Misi Kami");
+    await expect(
+      page.locator("h2").filter({ hasText: "Misi Kami" }),
+    ).toBeVisible();
 
     // Check mission content
-    const missionContent = page
-      .locator("p")
-      .filter({ hasText: "Pustaka Ilmu didirikan" });
+    const missionContent = page.locator(
+      "text=Pustaka Ilmu didirikan dengan misi",
+    );
     await expect(missionContent).toBeVisible();
-    await expect(missionContent).toContainText("literasi dan pengetahuan");
-    await expect(missionContent).toContainText("Sabang sampai Merauke");
+
+    // Verify mission text mentions key points
+    const missionText = await page
+      .locator("h2:has-text('Misi Kami') + p")
+      .textContent();
+    expect(missionText).toMatch(/literasi/i);
+    expect(missionText).toMatch(/pengetahuan/i);
+    expect(missionText).toMatch(/Indonesia/i);
   });
 
-  test("should display vision section with proper content", async ({
-    page,
-  }) => {
+  test("should display vision section", async ({ page }) => {
     // Check vision heading
-    const visionHeading = page.locator("h2").filter({ hasText: "Visi Kami" });
-    await expect(visionHeading).toBeVisible();
-    await expect(visionHeading).toContainText("Visi Kami");
+    await expect(
+      page.locator("h2").filter({ hasText: "Visi Kami" }),
+    ).toBeVisible();
 
     // Check vision content
-    const visionContent = page
-      .locator("p")
-      .filter({ hasText: "Menjadi toko buku online terdepan" });
+    const visionContent = page.locator(
+      "text=Menjadi toko buku online terdepan",
+    );
     await expect(visionContent).toBeVisible();
-    await expect(visionContent).toContainText("toko buku online terdepan");
-    await expect(visionContent).toContainText("komunitas pembaca");
+
+    // Verify vision text mentions key points
+    const visionText = await page
+      .locator("h2:has-text('Visi Kami') + p")
+      .textContent();
+    expect(visionText).toMatch(/toko buku online/i);
+    expect(visionText).toMatch(/Indonesia/i);
+    expect(visionText).toMatch(/komunitas pembaca/i);
   });
 
-  test("should have working navigation links", async ({ page }) => {
-    // Test Home/Beranda link
-    await page.locator('nav a[href="index.html"]').click();
-    await expect(page).toHaveURL(/.*index\.html|.*\/$/);
+  test("should display statistics cards", async ({ page }) => {
+    // Check for statistics section
+    const statsCards = page.locator(".bg-light.rounded-3");
+    const statsCount = await statsCards.count();
+    expect(statsCount).toBeGreaterThanOrEqual(3);
 
-    // Go back to about page
-    await page.goto("/about.html");
+    // Check first stat card (1000+ Judul)
+    const firstCard = statsCards.first();
+    await expect(firstCard.locator(".fas.fa-book-open")).toBeVisible();
+    await expect(firstCard.locator("h5")).toContainText("1000+ Judul");
+    await expect(firstCard.locator("p")).toContainText(
+      "Koleksi buku dari berbagai genre",
+    );
 
-    // Test Books/Koleksi link
-    await page.locator('nav a[href="books.html"]').click();
-    await expect(page).toHaveURL(/.*books\.html/);
+    // Check second stat card (5000+ Pembaca)
+    const secondCard = statsCards.nth(1);
+    await expect(secondCard.locator(".fas.fa-users")).toBeVisible();
+    await expect(secondCard.locator("h5")).toContainText("5000+ Pembaca");
+    await expect(secondCard.locator("p")).toContainText(
+      "Komunitas pembaca aktif",
+    );
 
-    // Go back to about page
-    await page.goto("/about.html");
-
-    // Test Contact/Kontak link
-    await page.locator('nav a[href="contact.html"]').click();
-    await expect(page).toHaveURL(/.*contact\.html/);
+    // Check third stat card (5 Tahun)
+    const thirdCard = statsCards.nth(2);
+    await expect(thirdCard.locator(".fas.fa-heart")).toBeVisible();
+    await expect(thirdCard.locator("h5")).toContainText("5 Tahun");
+    await expect(thirdCard.locator("p")).toContainText(
+      "Pengalaman melayani Indonesia",
+    );
   });
 
-  test("should display cart functionality", async ({ page }) => {
-    // Check cart icon is present
-    const cartIcon = page.locator(".fa-shopping-cart");
-    await expect(cartIcon).toBeVisible();
-
-    // Check cart counter element exists (even if hidden initially)
-    const cartCounter = page.locator('span[x-text="cartCount"]');
-    const cartCounterExists = (await cartCounter.count()) > 0;
-    expect(cartCounterExists).toBeTruthy();
-  });
-
-  test("should have proper footer content", async ({ page }) => {
-    // Check footer content
-    const footer = page.locator("footer");
-    await expect(footer).toContainText("© 2025 Toko Buku Pustaka Ilmu");
-    await expect(footer).toContainText("kontak@pustakailmu.com");
-    await expect(footer).toContainText("Dibuat di Bekasi");
-  });
-
-  test("should be responsive on different screen sizes", async ({ page }) => {
-    // Test desktop view
-    await page.setViewportSize({ width: 1200, height: 800 });
-    await expect(page.locator("header")).toBeVisible();
-    await expect(page.locator("h1")).toBeVisible();
-
-    // Test tablet view
-    await page.setViewportSize({ width: 768, height: 1024 });
-    await expect(page.locator("header")).toBeVisible();
-    await expect(page.locator("main")).toBeVisible();
-
-    // Check navigation is still functional on tablet
-    const navLinks = page.locator("nav a");
-    await expect(navLinks.first()).toBeVisible();
-
-    // Test mobile view
-    await page.setViewportSize({ width: 375, height: 667 });
-    await expect(page.locator("header")).toBeVisible();
-    await expect(page.locator("main")).toBeVisible();
-    await expect(page.locator("h1")).toBeVisible();
-
-    // Content should stack properly on mobile
-    const heroSection = page.locator(".bg-light-gray");
+  test("should have proper Bootstrap styling", async ({ page }) => {
+    // Check hero section has Bootstrap classes
+    const heroSection = page.locator(".hero-section");
     await expect(heroSection).toBeVisible();
+
+    // Check container classes
+    const containers = page.locator(".container");
+    const containerCount = await containers.count();
+    expect(containerCount).toBeGreaterThan(0);
+
+    // Check grid layout for statistics
+    const rowElements = page.locator(".row");
+    const rowCount = await rowElements.count();
+    expect(rowCount).toBeGreaterThan(0);
+
+    // Check column classes in statistics section
+    const colElements = page.locator(".col-md-4");
+    const colCount = await colElements.count();
+    expect(colCount).toBe(3); // Should have 3 stat columns
   });
 
-  test("should have proper meta tags and SEO elements", async ({ page }) => {
+  test("should be responsive on mobile", async ({ page }) => {
+    // Set mobile viewport
+    await page.setViewportSize({ width: 375, height: 667 });
+
+    // Check mobile navigation
+    const mobileToggle = page.locator(".navbar-toggler");
+    await expect(mobileToggle).toBeVisible();
+
+    // Check hero section is responsive
+    const heroSection = page.locator(".hero-section");
+    await expect(heroSection).toBeVisible();
+
+    // Check content is readable on mobile
+    const mainContent = page.locator("h2").filter({ hasText: "Misi Kami" });
+    await expect(mainContent).toBeVisible();
+
+    // Check statistics cards stack properly on mobile
+    const statsCards = page.locator(".col-md-4");
+    if ((await statsCards.count()) > 0) {
+      const firstCard = statsCards.first();
+      const cardBox = await firstCard.boundingBox();
+      const viewport = await page.viewportSize();
+
+      if (cardBox && viewport) {
+        expect(cardBox.width).toBeLessThanOrEqual(viewport.width);
+      }
+    }
+  });
+
+  test("should have working navigation", async ({ page }) => {
+    // Check brand link works
+    const brandLink = page.locator('.navbar-brand[href="index.php"]');
+    await brandLink.click();
+    await expect(page).toHaveURL(/.*index\.php$|.*\/$/);
+
+    // Go back to about page
+    await page.goto("/about.php");
+
+    // Check other navigation links work
+    const booksLink = page.locator('nav a[href="books.php"]');
+    await booksLink.click();
+    await expect(page).toHaveURL(/.*books\.php/);
+
+    // Go back to about page
+    await page.goto("/about.php");
+
+    const contactLink = page.locator('nav a[href="contact.php"]');
+    await contactLink.click();
+    await expect(page).toHaveURL(/.*contact\.php/);
+  });
+
+  test("should display proper typography and spacing", async ({ page }) => {
+    // Check main heading typography
+    const mainHeading = page.locator(".hero-section h1");
+    await expect(mainHeading).toHaveClass(/display-4/);
+    await expect(mainHeading).toHaveClass(/fw-bold/);
+
+    // Check section headings
+    const sectionHeadings = page.locator("h2");
+    const headingCount = await sectionHeadings.count();
+    expect(headingCount).toBeGreaterThanOrEqual(2);
+
+    for (let i = 0; i < Math.min(headingCount, 2); i++) {
+      const heading = sectionHeadings.nth(i);
+      const headingClasses = await heading.getAttribute("class");
+      expect(headingClasses).toMatch(/display-6|fw-bold/);
+    }
+
+    // Check proper spacing between sections
+    const contentSections = page.locator("section, .container > div");
+    const sectionCount = await contentSections.count();
+    expect(sectionCount).toBeGreaterThan(1);
+  });
+
+  test("should have proper semantic HTML structure", async ({ page }) => {
+    // Wait for page to load
+    await page.waitForTimeout(1000);
+
+    // Check for main content area
+    const mainContent = page.locator("main, section");
+    if ((await mainContent.count()) > 0) {
+      await expect(mainContent.first()).toBeVisible();
+    }
+
+    // Check proper heading hierarchy
+    const h1Count = await page.locator("h1").count();
+    if (h1Count > 0) {
+      expect(h1Count).toBe(1); // Should have exactly one H1
+    }
+
+    const h2Count = await page.locator("h2").count();
+    if (h2Count > 0) {
+      expect(h2Count).toBeGreaterThanOrEqual(2); // Should have Misi and Visi sections
+    }
+
+    // Check for proper landmark elements
+    await expect(page.locator("nav")).toBeVisible();
+    await expect(page.locator("footer")).toBeVisible();
+  });
+
+  test("should load quickly and efficiently", async ({ page }) => {
+    // Measure page load time
+    const startTime = Date.now();
+
+    await page.goto("/about.php", { waitUntil: "domcontentloaded" });
+
+    const loadTime = Date.now() - startTime;
+
+    // Should load within reasonable time (static content)
+    expect(loadTime).toBeLessThan(3000);
+
+    // Check that all essential content is loaded
+    await expect(page.locator("h1")).toBeVisible();
+    await expect(page.locator("h2").first()).toBeVisible();
+    await expect(page.locator(".bg-light.rounded-3").first()).toBeVisible();
+  });
+
+  test("should have accessible Font Awesome icons", async ({ page }) => {
+    // Check Font Awesome icons are loaded
+    const icons = page.locator(".fas");
+    const iconCount = await icons.count();
+    expect(iconCount).toBeGreaterThanOrEqual(3); // book-open, users, heart
+
+    // Check specific icons exist
+    await expect(page.locator(".fas.fa-book-open")).toBeVisible();
+    await expect(page.locator(".fas.fa-users")).toBeVisible();
+    await expect(page.locator(".fas.fa-heart")).toBeVisible();
+
+    // Check icons have proper color styling
+    const primaryColorIcons = page.locator(".fas.text-primary");
+    const primaryIconCount = await primaryColorIcons.count();
+    expect(primaryIconCount).toBeGreaterThanOrEqual(3);
+  });
+
+  test("should maintain consistent branding", async ({ page }) => {
+    // Check brand name in navigation
+    const brandElement = page.locator(".navbar-brand");
+    await expect(brandElement).toContainText("Pustaka Ilmu 📚");
+
+    // Check footer branding
+    const footer = page.locator("footer");
+    await expect(footer).toContainText("Toko Buku Pustaka Ilmu");
+    await expect(footer).toContainText("kontak@pustakailmu.com");
+
+    // Check consistent color scheme
+    const primaryColorElements = page.locator(".text-primary");
+    const primaryCount = await primaryColorElements.count();
+    expect(primaryCount).toBeGreaterThan(0);
+  });
+
+  test("should have proper meta tags", async ({ page }) => {
+    // Check language attribute
+    await expect(page.locator("html")).toHaveAttribute("lang", "id");
+
     // Check viewport meta tag
     const viewportMeta = page.locator('meta[name="viewport"]');
     await expect(viewportMeta).toHaveAttribute(
@@ -164,147 +284,43 @@ test.describe("About Page Tests", () => {
     // Check charset
     const charsetMeta = page.locator("meta[charset]");
     await expect(charsetMeta).toHaveAttribute("charset", "UTF-8");
-
-    // Check language attribute
-    await expect(page.locator("html")).toHaveAttribute("lang", "id");
-
-    // Check page title is descriptive
-    await expect(page).toHaveTitle(/Tentang Kami/);
   });
 
-  test("should load external resources properly", async ({ page }) => {
-    // Check that external CSS/JS resources are loaded
-    const tailwindScript = page.locator('script[src*="tailwindcss"]');
-    const alpineScript = page.locator('script[src*="alpinejs"]');
-    const htmxScript = page.locator('script[src*="htmx"]');
-    const fontAwesome = page.locator('link[href*="font-awesome"]');
+  test("should handle content overflow gracefully", async ({ page }) => {
+    // Test with very narrow viewport
+    await page.setViewportSize({ width: 320, height: 568 });
 
-    await expect(tailwindScript).toBeAttached();
-    await expect(alpineScript).toBeAttached();
-    await expect(htmxScript).toBeAttached();
-    await expect(fontAwesome).toBeAttached();
-  });
-
-  test("should have proper heading hierarchy", async ({ page }) => {
-    // Check h1 exists and is unique
-    const h1Elements = page.locator("h1");
-    await expect(h1Elements).toHaveCount(1);
-    await expect(h1Elements).toContainText("Tentang Pustaka Ilmu");
-
-    // Check h2 elements exist
-    const h2Elements = page.locator("h2");
-    const h2Count = await h2Elements.count();
-    expect(h2Count).toBeGreaterThanOrEqual(2); // Should have Misi and Visi sections
-
-    // Verify h2 content
-    await expect(page.locator("h2").first()).toContainText("Misi Kami");
-    await expect(page.locator("h2").nth(1)).toContainText("Visi Kami");
-  });
-
-  test("should have accessible color contrast and styling", async ({
-    page,
-  }) => {
-    // Check that text is readable by verifying elements have visible text
-    const missionSection = page.locator("h2").filter({ hasText: "Misi Kami" });
-    await expect(missionSection).toBeVisible();
-
-    const visionSection = page.locator("h2").filter({ hasText: "Visi Kami" });
-    await expect(visionSection).toBeVisible();
-
-    // Check that navigation links have proper styling
-    const activeLink = page.locator('nav a[href="about.html"]');
-    await expect(activeLink).toHaveClass(/text-primary/);
-
-    // Check brand link styling
-    const brandLink = page.locator('header a[href="index.html"]').first();
-    await expect(brandLink).toHaveClass(/text-primary/);
-  });
-
-  test("should handle Alpine.js initialization properly", async ({ page }) => {
-    // Wait for Alpine.js to initialize
+    // Wait for page to load
     await page.waitForTimeout(1000);
 
-    // Check if Alpine.js data attributes are working
-    await page.waitForFunction(() => {
-      return window.Alpine !== undefined;
-    });
-
-    // Verify cart data is initialized
-    const cartData = await page.evaluate(() => {
-      const body = document.querySelector("body");
-      return body && body._x_dataStack ? true : false;
-    });
-
-    // Alpine.js should be initialized (this may vary depending on implementation)
-    // At minimum, the page should not have JavaScript errors
-    const jsErrors = [];
-    page.on("console", (msg) => {
-      if (msg.type() === "error") {
-        jsErrors.push(msg.text());
-      }
-    });
-
-    await page.waitForTimeout(500);
-    expect(jsErrors.length).toBe(0);
-  });
-
-  test("should maintain consistent branding across pages", async ({ page }) => {
-    // Check brand consistency
-    const brandName = page.locator('a[href="index.html"]').first();
-    await expect(brandName).toContainText("Pustaka Ilmu 📚");
-
-    // Check consistent color scheme
-    const primaryElements = page.locator(".text-primary");
-    const primaryCount = await primaryElements.count();
-    expect(primaryCount).toBeGreaterThan(0);
-
-    // Check consistent typography (Poppins font should be applied)
-    const bodyFont = await page.evaluate(() => {
-      return getComputedStyle(document.body).fontFamily;
-    });
-    expect(bodyFont.toLowerCase()).toContain("poppins");
-  });
-
-  test("should have proper content structure and spacing", async ({ page }) => {
-    // Check container structure
-    const containers = page.locator(".container");
-    const containerCount = await containers.count();
-    expect(containerCount).toBeGreaterThan(0);
-
-    // Check content sections have proper spacing
-    const contentSections = page.locator("main > div");
-    await expect(contentSections.first()).toBeVisible();
-
-    // Verify text content is properly structured
-    const paragraphs = page.locator("main p");
-    const paragraphCount = await paragraphs.count();
-    expect(paragraphCount).toBeGreaterThanOrEqual(3); // Hero + Misi + Visi
-
-    // Check that content is not empty
-    for (let i = 0; i < Math.min(paragraphCount, 3); i++) {
-      const paragraph = paragraphs.nth(i);
-      const textContent = await paragraph.textContent();
-      expect(textContent.trim().length).toBeGreaterThan(10);
+    // Content should not overflow
+    const mainContent = page.locator("main, section");
+    if ((await mainContent.count()) > 0) {
+      await expect(mainContent.first()).toBeVisible();
     }
-  });
 
-  test("should handle browser back/forward navigation properly", async ({
-    page,
-  }) => {
-    // Navigate to another page
-    await page.locator('nav a[href="index.html"]').click();
-    await expect(page).toHaveURL(/.*index\.html|.*\/$/);
+    // Text should wrap properly
+    const missionText = page.locator("h2:has-text('Misi Kami') + p");
+    if ((await missionText.count()) > 0) {
+      await expect(missionText).toBeVisible();
+    }
 
-    // Use browser back button
-    await page.goBack();
-    await expect(page).toHaveURL(/.*about\.html/);
+    // Statistics cards should stack properly
+    const statsCards = page.locator(".col-md-4");
+    const cardCount = await statsCards.count();
 
-    // Verify page content is still displayed correctly
-    await expect(page.locator("h1")).toContainText("Tentang Pustaka Ilmu");
-    await expect(page.locator("h2").first()).toContainText("Misi Kami");
+    if (cardCount > 0) {
+      // Check at least the first card is visible
+      await expect(statsCards.first()).toBeVisible();
 
-    // Use browser forward button
-    await page.goForward();
-    await expect(page).toHaveURL(/.*index\.html|.*\/$/);
+      // Check that cards don't overflow viewport
+      for (let i = 0; i < Math.min(cardCount, 3); i++) {
+        const card = statsCards.nth(i);
+        const cardBox = await card.boundingBox();
+        if (cardBox) {
+          expect(cardBox.width).toBeLessThanOrEqual(320);
+        }
+      }
+    }
   });
 });

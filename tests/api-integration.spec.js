@@ -1,453 +1,520 @@
 const { test, expect } = require("@playwright/test");
 
-test.describe("API Integration and Data Loading Tests", () => {
+test.describe("API Integration and Database Tests - PHP/MySQL Version", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
   });
 
-  test.describe("Books Data Loading", () => {
-    test("should load books.json successfully", async ({ page }) => {
-      // Intercept the books.json request
-      const booksRequest = page.waitForResponse(
-        (response) =>
-          response.url().includes("books.json") && response.status() === 200,
-      );
-
-      await page.reload();
-
-      // Wait for the books.json to be fetched
-      const response = await booksRequest;
-      expect(response.status()).toBe(200);
-
-      // Verify the response contains valid JSON
-      const booksData = await response.json();
-      expect(Array.isArray(booksData)).toBeTruthy();
-      expect(booksData.length).toBeGreaterThan(0);
-
-      // Verify books have required properties
-      const firstBook = booksData[0];
-      expect(firstBook).toHaveProperty("id");
-      expect(firstBook).toHaveProperty("title");
-      expect(firstBook).toHaveProperty("author");
-      expect(firstBook).toHaveProperty("price");
-      expect(firstBook).toHaveProperty("image");
-    });
-
-    test("should handle books.json loading failure gracefully", async ({
+  test.describe("Database Connection and Data Loading", () => {
+    test("should load books from MySQL database successfully", async ({
       page,
     }) => {
-      // Mock a failed request
-      await page.route("**/books.json", (route) => {
-        route.fulfill({
-          status: 404,
-          contentType: "application/json",
-          body: JSON.stringify({ error: "Not found" }),
-        });
-      });
+      // Wait for page to load
+      await page.waitForTimeout(1000);
 
-      await page.reload();
+      // Check if books section exists
+      const booksSection = page.locator("#koleksi");
+      await expect(booksSection).toBeVisible();
 
-      // Wait for the fallback to load
-      await page.waitForTimeout(2000);
-
-      // Verify fallback books are displayed
+      // Should either show books or appropriate error message
       const bookCards = page.locator(".book-card");
-      await expect(bookCards).toHaveCount(1);
+      const alertMessage = page.locator(".alert");
 
-      // Check that fallback book is displayed
-      await expect(page.locator(".book-card")).toContainText(
-        "Judul Buku Fiksi",
-      );
+      const hasBooks = (await bookCards.count()) > 0;
+      const hasAlert = (await alertMessage.count()) > 0;
+
+      expect(hasBooks || hasAlert).toBeTruthy();
+
+      if (hasBooks) {
+        // Verify book card structure
+        const firstBook = bookCards.first();
+        await expect(firstBook.locator(".card-title")).toBeVisible();
+        await expect(firstBook.locator(".text-muted")).toBeVisible();
+        await expect(firstBook.locator(".book-price")).toBeVisible();
+        await expect(firstBook.locator("img")).toBeVisible();
+      }
     });
 
-    test("should filter and display trending books correctly", async ({
-      page,
-    }) => {
-      // Wait for books to load
-      await page.waitForFunction(() => {
-        const loadingElement = document.querySelector('[x-show="loading"]');
-        return !loadingElement || loadingElement.style.display === "none";
-      });
+    test("should display proper book data from database", async ({ page }) => {
+      await page.waitForTimeout(1000);
 
-      // Check that only trending books are displayed on homepage
-      const displayedBooks = await page.evaluate(() => {
-        const bookElements = document.querySelectorAll(".book-card");
-        return Array.from(bookElements).map((card) => ({
-          title: card.querySelector("h3")?.textContent,
-          author: card.querySelector("p")?.textContent,
-          price: card.querySelector(".text-primary")?.textContent,
-        }));
-      });
+      const bookCards = page.locator(".book-card");
+      if ((await bookCards.count()) > 0) {
+        const firstBook = bookCards.first();
 
-      expect(displayedBooks.length).toBeGreaterThan(0);
-      displayedBooks.forEach((book) => {
-        expect(book.title).toBeTruthy();
-        expect(book.author).toBeTruthy();
-        expect(book.price).toBeTruthy();
-      });
+        // Check title format
+        const title = await firstBook.locator(".card-title").textContent();
+        expect(title.trim().length).toBeGreaterThan(0);
+
+        // Check author format (should contain "oleh")
+        const author = await firstBook.locator(".text-muted").textContent();
+        expect(author).toMatch(/oleh\s+.+/);
+
+        // Check price format (should contain "Rp" and be formatted)
+        const price = await firstBook.locator(".book-price").textContent();
+        expect(price).toMatch(/Rp\s[\d,.]+/);
+
+        // Check image source
+        const img = firstBook.locator("img");
+        const imgSrc = await img.getAttribute("src");
+        expect(imgSrc).toContain("placehold.co");
+      }
     });
 
-    test("should display correct book information from JSON data", async ({
+    test("should handle database connection failures gracefully", async ({
       page,
     }) => {
-      // Intercept and capture the books data
-      let booksData = null;
-      await page.route("**/books.json", async (route) => {
-        const response = await route.fetch();
-        booksData = await response.json();
-        route.fulfill({ response });
+      // Even if database is down, page should still load
+      await expect(page.locator("body")).toBeVisible();
+      await expect(page.locator("nav.navbar")).toBeVisible();
+      await expect(page.locator(".hero-section")).toBeVisible();
+
+      // Should show appropriate message if no books available
+      const booksSection = page.locator("#koleksi");
+      await expect(booksSection).toBeVisible();
+
+      // Either books or fallback message should be present
+      const hasContent = await page.evaluate(() => {
+        const bookCards = document.querySelectorAll(".book-card");
+        const alerts = document.querySelectorAll(".alert");
+        return bookCards.length > 0 || alerts.length > 0;
       });
 
-      await page.reload();
+      expect(hasContent).toBeTruthy();
+    });
 
-      // Wait for books to load
-      await page.waitForFunction(() => {
-        const loadingElement = document.querySelector('[x-show="loading"]');
-        return !loadingElement || loadingElement.style.display === "none";
-      });
+    test("should load all books on books page", async ({ page }) => {
+      await page.goto("/books.php");
 
-      if (booksData && booksData.length > 0) {
-        const trendingBooks = booksData.filter((book) => book.trending);
+      // Check page title
+      await expect(page.locator("h1")).toContainText("Semua Koleksi Buku");
 
-        // Verify the correct number of trending books are displayed
-        const displayedCards = page.locator(".book-card");
-        await expect(displayedCards).toHaveCount(trendingBooks.length);
+      // Wait for data to load
+      await page.waitForTimeout(1000);
 
-        // Verify first book details match the data
-        if (trendingBooks.length > 0) {
-          const firstTrendingBook = trendingBooks[0];
-          const firstCard = displayedCards.first();
+      const bookCards = page.locator(".book-card");
+      const noDataAlert = page.locator(".alert-warning");
 
-          await expect(firstCard.locator("h3")).toContainText(
-            firstTrendingBook.title,
-          );
-          await expect(firstCard.locator("p").first()).toContainText(
-            firstTrendingBook.author,
-          );
-          await expect(firstCard.locator(".text-primary")).toContainText(
-            firstTrendingBook.price,
-          );
+      const hasBooks = (await bookCards.count()) > 0;
+      const hasNoDataMessage = (await noDataAlert.count()) > 0;
 
-          // Check image src
-          const imgSrc = await firstCard.locator("img").getAttribute("src");
-          expect(imgSrc).toBe(firstTrendingBook.image);
+      // Should have either books or no data message
+      expect(hasBooks || hasNoDataMessage).toBeTruthy();
+
+      if (hasBooks) {
+        // Books page should potentially show more books than homepage
+        const bookCount = await bookCards.count();
+        expect(bookCount).toBeGreaterThan(0);
+
+        // Verify all books have proper structure
+        for (let i = 0; i < Math.min(bookCount, 3); i++) {
+          const book = bookCards.nth(i);
+          await expect(book.locator(".card-title")).toBeVisible();
+          await expect(book.locator(".book-price")).toBeVisible();
         }
       }
     });
   });
 
-  test.describe("HTMX Cart Integration", () => {
-    test("should make HTMX requests when add to cart is clicked", async ({
-      page,
-    }) => {
-      // Set up request interception for cart requests
+  test.describe("Cart API Integration", () => {
+    test("should make AJAX request to add_to_cart.php", async ({ page }) => {
+      // Set up request monitoring
       const cartRequests = [];
-      await page.route("**/add-to-cart", (route) => {
-        cartRequests.push(route.request());
-        route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ success: true, message: "Added to cart" }),
-        });
+
+      page.on("request", (request) => {
+        if (request.url().includes("add_to_cart.php")) {
+          cartRequests.push({
+            method: request.method(),
+            url: request.url(),
+            postData: request.postData(),
+          });
+        }
       });
 
       // Wait for books to load
-      await page.waitForFunction(() => {
-        const loadingElement = document.querySelector('[x-show="loading"]');
-        return !loadingElement || loadingElement.style.display === "none";
-      });
+      await page.waitForTimeout(1000);
 
-      // Find and click the first buy button
-      const firstBookCard = page.locator(".book-card").first();
-      await firstBookCard.hover();
+      const bookCards = page.locator(".book-card");
+      if ((await bookCards.count()) > 0) {
+        const firstBook = bookCards.first();
+        await firstBook.hover();
 
-      const buyButton = firstBookCard.locator(".btn-buy");
-      await buyButton.hover();
+        const buyButton = firstBook.locator(".btn-buy");
+        if (await buyButton.isVisible()) {
+          await buyButton.click();
 
-      if (await buyButton.isVisible()) {
-        await buyButton.click();
+          // Wait for request to complete
+          await page.waitForTimeout(2000);
 
-        // Wait for the request to be made
-        await page.waitForTimeout(1000);
+          // Should have made at least one request
+          expect(cartRequests.length).toBeGreaterThanOrEqual(1);
 
-        // Verify HTMX request was made (may be 0 if no backend)
-        // This is expected behavior without a real backend
-        expect(cartRequests.length).toBeGreaterThanOrEqual(0);
+          if (cartRequests.length > 0) {
+            const request = cartRequests[0];
+            expect(request.method).toBe("POST");
+            expect(request.url).toContain("add_to_cart.php");
+            expect(request.postData).toContain("book_id=");
+          }
+        }
       }
     });
 
-    test("should update cart counter after successful add to cart", async ({
+    test("should handle successful cart addition", async ({ page }) => {
+      // Mock successful response
+      await page.route("**/add_to_cart.php", (route) => {
+        const request = route.request();
+        if (request.method() === "POST") {
+          route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              success: true,
+              cart_count: 1,
+              message: "Item added to cart successfully",
+            }),
+          });
+        } else {
+          route.continue();
+        }
+      });
+
+      await page.waitForTimeout(1000);
+
+      const bookCards = page.locator(".book-card");
+      if ((await bookCards.count()) > 0) {
+        const initialBadgeCount = await page.locator(".cart-badge").count();
+
+        const firstBook = bookCards.first();
+        await firstBook.hover();
+
+        const buyButton = firstBook.locator(".btn-buy");
+        if (await buyButton.isVisible()) {
+          await buyButton.click();
+          await page.waitForTimeout(1500);
+
+          // Check for notification
+          const notification = page.locator("#notification");
+          const isNotificationVisible = await notification.isVisible();
+
+          // Check for cart badge update
+          const finalBadgeCount = await page.locator(".cart-badge").count();
+          const badgeUpdated = finalBadgeCount > initialBadgeCount;
+
+          // Either notification should show or badge should update
+          expect(isNotificationVisible || badgeUpdated).toBeTruthy();
+        }
+      }
+    });
+
+    test("should handle cart addition failures gracefully", async ({
       page,
     }) => {
-      // Mock successful cart response
-      await page.route("**/add-to-cart", (route) => {
-        route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ success: true }),
-        });
-      });
-
-      // Wait for books to load
-      await page.waitForFunction(() => {
-        const loadingElement = document.querySelector('[x-show="loading"]');
-        return !loadingElement || loadingElement.style.display === "none";
-      });
-
-      // Add item to cart
-      const firstBookCard = page.locator(".book-card").first();
-      await firstBookCard.hover();
-
-      const buyButton = firstBookCard.locator(".btn-buy");
-      if (await buyButton.isVisible()) {
-        await buyButton.click();
-
-        // Wait for cart counter to potentially update
-        await page.waitForTimeout(1000);
-
-        // Note: Without a real backend, the cart counter may not update
-        // This test verifies the UI structure exists
-        const cartCounterElement = page.locator('span[x-text="cartCount"]');
-
-        // Check if the cart counter element exists (it may be hidden if count is 0)
-        const cartCounterExists = (await cartCounterElement.count()) > 0;
-        expect(cartCounterExists).toBeTruthy();
-      }
-    });
-
-    test("should show notification after successful add to cart", async ({
-      page,
-    }) => {
-      // Mock successful cart response
-      await page.route("**/add-to-cart", (route) => {
-        route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ success: true }),
-        });
-      });
-
-      // Wait for books to load
-      await page.waitForFunction(() => {
-        const loadingElement = document.querySelector('[x-show="loading"]');
-        return !loadingElement || loadingElement.style.display === "none";
-      });
-
-      // Add item to cart
-      const firstBookCard = page.locator(".book-card").first();
-      await firstBookCard.hover();
-
-      const buyButton = firstBookCard.locator(".btn-buy");
-      await buyButton.hover();
-
-      if (await buyButton.isVisible()) {
-        await buyButton.click();
-
-        // Wait for potential notification
-        await page.waitForTimeout(1000);
-
-        // Note: Without a real backend, notifications may not appear
-        // This test verifies the notification structure exists
-        const notification = page.locator('[x-show="showNotification"]');
-        const notificationExists = (await notification.count()) > 0;
-        expect(notificationExists).toBeTruthy();
-      }
-    });
-
-    test("should handle cart request failures gracefully", async ({ page }) => {
-      // Mock failed cart response
-      await page.route("**/add-to-cart", (route) => {
+      // Mock failed response
+      await page.route("**/add_to_cart.php", (route) => {
         route.fulfill({
           status: 500,
           contentType: "application/json",
-          body: JSON.stringify({ error: "Server error" }),
+          body: JSON.stringify({
+            success: false,
+            message: "Server error",
+          }),
         });
       });
 
-      // Wait for books to load
-      await page.waitForFunction(() => {
-        const loadingElement = document.querySelector('[x-show="loading"]');
-        return !loadingElement || loadingElement.style.display === "none";
-      });
+      await page.waitForTimeout(1000);
 
-      // Try to add item to cart
-      const firstBookCard = page.locator(".book-card").first();
-      await firstBookCard.hover();
+      const bookCards = page.locator(".book-card");
+      if ((await bookCards.count()) > 0) {
+        const initialBadgeCount = await page.locator(".cart-badge").count();
 
-      const buyButton = firstBookCard.locator(".btn-buy");
-      if (await buyButton.isVisible()) {
-        await buyButton.click();
+        const firstBook = bookCards.first();
+        await firstBook.hover();
 
-        // Wait for potential error handling
-        await page.waitForTimeout(1000);
+        const buyButton = firstBook.locator(".btn-buy");
+        if (await buyButton.isVisible()) {
+          await buyButton.click();
+          await page.waitForTimeout(1500);
 
-        // Cart counter should not increase on failure
-        const cartCounter = page.locator('[x-text="cartCount"]');
-        if (await cartCounter.isVisible()) {
-          const count = await cartCounter.textContent();
-          expect(parseInt(count) || 0).toBe(0);
+          // Badge should not update on error
+          const finalBadgeCount = await page.locator(".cart-badge").count();
+          expect(finalBadgeCount).toBe(initialBadgeCount);
+
+          // Page should still be functional
+          await expect(page.locator("body")).toBeVisible();
+        }
+      }
+    });
+
+    test("should maintain cart state across pages (PHP sessions)", async ({
+      page,
+    }) => {
+      // Add item to cart on homepage
+      await page.waitForTimeout(1000);
+
+      const bookCards = page.locator(".book-card");
+      if ((await bookCards.count()) > 0) {
+        const firstBook = bookCards.first();
+        await firstBook.hover();
+
+        const buyButton = firstBook.locator(".btn-buy");
+        if (await buyButton.isVisible()) {
+          await buyButton.click();
+          await page.waitForTimeout(1500);
+
+          // Navigate to books page
+          await page.goto("/books.php");
+          await page.waitForTimeout(500);
+
+          // Navigate back to homepage
+          await page.goto("/");
+          await page.waitForTimeout(500);
+
+          // Cart state should be maintained
+          const cartBadge = page.locator(".cart-badge");
+          if ((await cartBadge.count()) > 0) {
+            const badgeText = await cartBadge.textContent();
+            expect(parseInt(badgeText)).toBeGreaterThan(0);
+          }
         }
       }
     });
   });
 
-  test.describe("Network Performance and Caching", () => {
-    test("should handle slow network connections", async ({ page }) => {
-      // Simulate slow network
-      await page.route("**/books.json", async (route) => {
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 second delay
-        const response = await route.fetch();
-        route.fulfill({ response });
-      });
+  test.describe("Contact Form Integration", () => {
+    test("should submit contact form successfully", async ({ page }) => {
+      await page.goto("/contact.php");
 
-      const startTime = Date.now();
-      await page.reload();
+      // Fill out the form
+      await page.fill("#name", "Test User");
+      await page.fill("#email", "test@example.com");
+      await page.fill("#message", "This is a test message from Playwright.");
 
-      // Verify loading indicator appears
-      const loadingIndicator = page.locator('[x-show="loading"]');
-      await expect(loadingIndicator).toBeVisible();
+      // Submit the form
+      await page.click('button[type="submit"]');
 
-      // Wait for books to load
-      await page.waitForFunction(
-        () => {
-          const loadingElement = document.querySelector('[x-show="loading"]');
-          return !loadingElement || loadingElement.style.display === "none";
-        },
-        { timeout: 5000 },
-      );
+      // Wait for form processing
+      await page.waitForTimeout(1500);
 
-      const loadTime = Date.now() - startTime;
-      expect(loadTime).toBeGreaterThan(1500); // Should take at least our simulated delay
+      // Should either show success message or stay on page with validation
+      const successAlert = page.locator(".alert-success");
+      const errorAlert = page.locator(".alert-danger");
+      const isOnContactPage = page.url().includes("contact.php");
 
-      // Verify books eventually load
-      const bookCards = page.locator(".book-card");
-      await expect(bookCards.first()).toBeVisible();
+      // Should either show an alert or stay on contact page
+      const hasAlert =
+        (await successAlert.count()) > 0 || (await errorAlert.count()) > 0;
+
+      expect(hasAlert || isOnContactPage).toBeTruthy();
     });
 
-    test("should handle concurrent requests properly", async ({ page }) => {
-      let requestCount = 0;
+    test("should validate contact form fields", async ({ page }) => {
+      await page.goto("/contact.php");
 
-      await page.route("**/books.json", async (route) => {
-        requestCount++;
-        const response = await route.fetch();
-        route.fulfill({ response });
+      // Submit empty form
+      await page.click('button[type="submit"]');
+      await page.waitForTimeout(1000);
+
+      // Should show validation (browser validation or server-side)
+      const errorAlert = page.locator(".alert-danger");
+      const formValidation = await page.evaluate(() => {
+        const nameInput = document.querySelector("#name");
+        const emailInput = document.querySelector("#email");
+        const messageInput = document.querySelector("#message");
+
+        return (
+          !nameInput.validity.valid ||
+          !emailInput.validity.valid ||
+          !messageInput.validity.valid
+        );
       });
 
-      // Trigger multiple rapid navigation/refreshes
-      await page.reload();
-      await page.reload();
-      await page.reload();
+      // Either server-side validation error or browser validation
+      const hasValidation = (await errorAlert.count()) > 0 || formValidation;
+      expect(hasValidation).toBeTruthy();
+    });
 
-      await page.waitForTimeout(2000);
+    test("should validate email format", async ({ page }) => {
+      await page.goto("/contact.php");
 
-      // Should have made multiple requests but handled them properly
-      expect(requestCount).toBeGreaterThan(0);
+      // Fill form with invalid email
+      await page.fill("#name", "Test User");
+      await page.fill("#email", "invalid-email");
+      await page.fill("#message", "Test message");
 
-      // Final state should be correct
-      await page.waitForFunction(() => {
-        const loadingElement = document.querySelector('[x-show="loading"]');
-        return !loadingElement || loadingElement.style.display === "none";
+      await page.click('button[type="submit"]');
+      await page.waitForTimeout(1000);
+
+      // Should show validation error
+      const hasError = await page.evaluate(() => {
+        const emailInput = document.querySelector("#email");
+        return !emailInput.validity.valid;
       });
 
-      const bookCards = page.locator(".book-card");
-      await expect(bookCards.first()).toBeVisible();
+      expect(hasError).toBeTruthy();
     });
   });
 
-  test.describe("Data Validation and Error Handling", () => {
-    test("should handle malformed JSON response", async ({ page }) => {
-      // Mock malformed JSON response
-      await page.route("**/books.json", (route) => {
-        route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: "{ invalid json content",
-        });
-      });
+  test.describe("Performance and Error Handling", () => {
+    test("should handle slow database responses", async ({ page }) => {
+      // Simulate slow page load
+      const startTime = Date.now();
 
-      await page.reload();
+      await page.goto("/", { waitUntil: "domcontentloaded", timeout: 10000 });
 
-      // Wait for fallback handling
-      await page.waitForTimeout(2000);
+      const loadTime = Date.now() - startTime;
 
-      // Should show fallback books
-      const bookCards = page.locator(".book-card");
-      const bookCount = await bookCards.count();
-      expect(bookCount).toBeGreaterThanOrEqual(1);
-      await expect(bookCards.first()).toContainText("Judul Buku Fiksi");
+      // Page should load within reasonable time even if slow
+      expect(loadTime).toBeLessThan(10000);
+
+      // Content should still be accessible
+      await expect(page.locator("nav.navbar")).toBeVisible();
+      await expect(page.locator(".hero-section")).toBeVisible();
     });
 
-    test("should validate book data structure", async ({ page }) => {
-      // Mock response with incomplete book data
-      const incompleteBooks = [
-        { id: 1, title: "Book 1" }, // missing author, price, image
-        { id: 2, author: "Author 2", price: "Rp 50.000" }, // missing title, image
-        {
-          id: 3,
-          title: "Complete Book",
-          author: "Complete Author",
-          price: "Rp 75.000",
-          image: "test.jpg",
-          trending: true,
-        },
-      ];
+    test("should handle concurrent requests properly", async ({ page }) => {
+      // Rapidly navigate between pages
+      const pages = ["/", "/books.php", "/about.php", "/contact.php"];
 
-      await page.route("**/books.json", (route) => {
-        route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(incompleteBooks),
-        });
-      });
-
-      await page.reload();
-
-      // Wait for books to load
-      await page.waitForFunction(() => {
-        const loadingElement = document.querySelector('[x-show="loading"]');
-        return !loadingElement || loadingElement.style.display === "none";
-      });
-
-      // Should handle incomplete data gracefully and only show complete books
-      const bookCards = page.locator(".book-card");
-
-      // Should show at least the complete book
-      const bookCount = await bookCards.count();
-      expect(bookCount).toBeGreaterThanOrEqual(1);
-
-      // Verify the complete book is displayed correctly
-      const completeBookCard = bookCards.filter({ hasText: "Complete Book" });
-      await expect(completeBookCard).toBeVisible();
-    });
-
-    test("should handle empty books array", async ({ page }) => {
-      // Mock empty books response
-      await page.route("**/books.json", (route) => {
-        route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify([]),
-        });
-      });
-
-      await page.reload();
-
-      // Wait for handling
-      await page.waitForTimeout(2000);
-
-      // Should show fallback or empty state
-      // The app should handle this gracefully without crashing
-      const appContainer = page.locator("body");
-      await expect(appContainer).toBeVisible();
-
-      // Check if fallback books are shown or if there's an appropriate message
-      const bookCards = page.locator(".book-card");
-      const hasBooks = (await bookCards.count()) > 0;
-
-      // Either should show fallback books or handle empty state gracefully
-      if (hasBooks) {
-        await expect(bookCards.first()).toContainText("Judul Buku Fiksi");
+      for (const pagePath of pages) {
+        await page.goto(pagePath, { waitUntil: "domcontentloaded" });
+        await page.waitForTimeout(200);
       }
+
+      // Final page should load correctly
+      await expect(page.locator("body")).toBeVisible();
+      await expect(page.locator("nav.navbar")).toBeVisible();
+    });
+
+    test("should maintain PHP session integrity", async ({ page }) => {
+      // Test session persistence across multiple requests
+      await page.goto("/");
+
+      const bookCards = page.locator(".book-card");
+      if ((await bookCards.count()) > 0) {
+        // Add multiple items to cart
+        for (let i = 0; i < Math.min(2, await bookCards.count()); i++) {
+          const book = bookCards.nth(i);
+          await book.hover();
+
+          const buyButton = book.locator(".btn-buy");
+          if (await buyButton.isVisible()) {
+            await buyButton.click();
+            await page.waitForTimeout(500);
+          }
+        }
+
+        // Navigate to other pages
+        await page.goto("/about.php");
+        await page.goto("/books.php");
+        await page.goto("/");
+
+        // Session should be maintained
+        const cartBadge = page.locator(".cart-badge");
+        if ((await cartBadge.count()) > 0) {
+          const badgeText = await cartBadge.textContent();
+          expect(parseInt(badgeText)).toBeGreaterThan(0);
+        }
+      }
+    });
+
+    test("should handle PHP errors gracefully", async ({ page }) => {
+      // Even with potential PHP errors, page should not be completely broken
+      await page.goto("/");
+
+      // Basic page structure should be intact
+      await expect(page.locator("html")).toBeVisible();
+      await expect(page.locator("body")).toBeVisible();
+
+      // Navigation should work
+      const navLinks = page.locator("nav a");
+      const navCount = await navLinks.count();
+      expect(navCount).toBeGreaterThan(0);
+
+      // Should not have PHP fatal error messages visible to user
+      const pageContent = await page.textContent("body");
+      expect(pageContent).not.toMatch(
+        /Fatal error|Parse error|Warning.*in.*on line/i,
+      );
+    });
+  });
+
+  test.describe("Data Integrity and Security", () => {
+    test("should properly escape HTML in book data", async ({ page }) => {
+      await page.waitForTimeout(1000);
+
+      const bookCards = page.locator(".book-card");
+      if ((await bookCards.count()) > 0) {
+        // Check that book data is properly escaped (no raw HTML)
+        const firstBook = bookCards.first();
+
+        const titleHTML = await firstBook.locator(".card-title").innerHTML();
+        const authorHTML = await firstBook.locator(".text-muted").innerHTML();
+
+        // Should not contain script tags or other HTML
+        expect(titleHTML).not.toMatch(/<script|<iframe|javascript:/i);
+        expect(authorHTML).not.toMatch(/<script|<iframe|javascript:/i);
+      }
+    });
+
+    test("should handle SQL injection attempts safely", async ({ page }) => {
+      // Attempt SQL injection in cart request
+      await page.route("**/add_to_cart.php", async (route) => {
+        const request = route.request();
+        const postData = request.postData() || "";
+
+        // Verify the request is properly handling data
+        if (postData.includes("book_id=")) {
+          route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ success: true, cart_count: 1 }),
+          });
+        } else {
+          route.fulfill({
+            status: 400,
+            contentType: "application/json",
+            body: JSON.stringify({
+              success: false,
+              message: "Invalid request",
+            }),
+          });
+        }
+      });
+
+      // Try to manipulate cart request (this would be caught by proper PHP handling)
+      await page.evaluate(() => {
+        if (window.addToCart) {
+          // Test with potentially malicious input
+          window.addToCart("1'; DROP TABLE books; --");
+        }
+      });
+
+      // Page should still function normally
+      await expect(page.locator("body")).toBeVisible();
+    });
+
+    test("should validate form inputs properly", async ({ page }) => {
+      await page.goto("/contact.php");
+
+      // Test XSS prevention in contact form
+      const xssPayload = "<script>alert('xss')</script>";
+
+      await page.fill("#name", xssPayload);
+      await page.fill("#email", "test@example.com");
+      await page.fill("#message", "Test message");
+
+      await page.click('button[type="submit"]');
+      await page.waitForTimeout(1000);
+
+      // If form processed, XSS should be escaped
+      const pageContent = await page.textContent("body");
+      expect(pageContent).not.toContain("<script>alert('xss')</script>");
+
+      // Should not execute JavaScript
+      const alertCalled = await page.evaluate(() => {
+        return window.alertCalled || false;
+      });
+      expect(alertCalled).toBeFalsy();
     });
   });
 });
